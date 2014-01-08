@@ -71,7 +71,7 @@ This plugin is also Android Studio and Intellij-friendly. To upload builds direc
 
  ![Edit Configuration screenshot][1] 
 
-2. Add a new Gradle configuration, use task "*testfairyDebug*" or similar.
+2. Add a new Gradle configuration, use task "*testfairyDebug*" or another, depending on your build type.
 
  ![Add new Gradle configuration screenshot][2]
 
