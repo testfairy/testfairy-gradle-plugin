@@ -57,7 +57,8 @@ class TestFairyPlugin implements Plugin<Project> {
 								String apkFilename = task.outputFile.toString()
 								project.logger.info("Instrumenting ${apkFilename} using apiKey ${apiKey} and server ${serverEndpoint}")
 
-								def isSigned = isApkSigned(apkFilename)
+								// check if there's a signingConfig for this type
+								def isSigned = (android.hasProperty('signingConfigs') && android.signingConfigs.hasProperty(buildName))
 
 								def json = uploadApk(serverEndpoint, apiKey, apkFilename)
 								if (isSigned) {
@@ -76,9 +77,11 @@ class TestFairyPlugin implements Plugin<Project> {
 
 									// upload the signed apk file back to testfairy
 									json = uploadSignedApk(serverEndpoint, apiKey, tempFilename)
-									println "Successfully uploaded to TestFairy, build is available at:"
-									println json.build_url
+									(new File(tempFilename)).delete()
 								}
+
+								println "Successfully uploaded to TestFairy, build is available at:"
+								println json.build_url
 							}
 
 							project.(newTaskName.toString()).dependsOn(expectingTask)
