@@ -1,0 +1,61 @@
+apply plugin: 'groovy'
+
+dependencies {
+	compile gradleApi()
+	compile localGroovy()
+	compile 'org.apache.httpcomponents:httpmime:4.2.5'
+	compile 'org.apache.commons:commons-io:1.3.2'
+}
+
+apply plugin: 'maven'
+
+group = 'com.testfairy.plugins.gradle'
+version = '1.0'
+
+repositories {
+	mavenCentral()
+}
+
+configurations {
+	includeInJar
+}
+
+uploadArchives {
+	repositories {
+		mavenDeployer {
+			repository(url: uri('repo'))
+
+			pom.project {
+				name 'TestFairy Uploader Plugin for Gradle'
+				description 'Upload signed builds directly to TestFairy platform.'
+				url 'https://www.testfairy.com'
+				inceptionYear '2013'
+
+				licenses {
+					license {
+						name 'The Apache Software License, Version 2.0'
+						url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+						distribution 'repo'
+					}
+                		}
+
+				scm {
+					url "https://github.com/testfairy/testfairy-gradle-plugin.git"
+					connection "git://github.com/testfairy/testfairy-gradle-plugin.git"
+				}
+
+				developers {
+					developer {
+						name 'Gil Megidish'
+						email 'gil@testfairy.com'
+						organization 'TestFairy'
+						organizationUrl 'https://www.testfairy.com'
+					}
+				}
+			}
+		}
+	}
+}
+
+jar {
+}
