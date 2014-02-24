@@ -14,7 +14,7 @@ A typical TestFairy Gradle Plugin installation takes less than 20 seconds. Insta
     
  2. Add plugin dependency: 
 
-        classpath 'com.testfairy.plugins.gradle:testfairy:1.0+'
+        classpath 'com.testfairy.plugins.gradle:testfairy:1.+'
 
  3. Apply plugin:
 
@@ -39,7 +39,7 @@ For convenience, here is a snippet of a complete ***build.gradle*** file, includ
     
         dependencies {
             classpath 'com.android.tools.build:gradle:0.6'
-            classpath 'com.testfairy.plugins.gradle:testfairy:1.0+'
+            classpath 'com.testfairy.plugins.gradle:testfairy:1.+'
         }
     }
     
@@ -61,6 +61,10 @@ With the plugin installed, a set of new tasks, prefixed "*testfairy*" will be ad
 For example: to upload a debug build, run the following from terminal:
 
     gradlew testfairyDebug
+    
+Optionally, you can add a *changelog* to this build. This changelog will appear in your build notes and as a default message when inviting testers. For example:
+
+    gradlew -PtestfairyChangelog="Fixed all bugs" testfairyDebug
 
 Android Studio / IntelliJ
 -------------------------
