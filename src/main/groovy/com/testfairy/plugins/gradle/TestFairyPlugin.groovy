@@ -13,8 +13,6 @@ import org.apache.commons.io.IOUtils
 import org.apache.commons.io.FilenameUtils
 import groovy.json.JsonSlurper
 
-//import com.testfairy.plugins.common.
-
 class TestFairyPlugin implements Plugin<Project> {
 
 	static final String CONTENT_TYPE_MULTIPART = 'multipart/form-data'
@@ -60,7 +58,7 @@ class TestFairyPlugin implements Plugin<Project> {
 								// check if there's a signingConfig for this type
 								def isSigned = (android.hasProperty('signingConfigs') && android.signingConfigs.hasProperty(buildName))
 
-								def json = uploadApk(serverEndpoint, apiKey, apkFilename)
+								def json = uploadApk(project, serverEndpoint, apiKey, apkFilename)
 								if (isSigned) {
 									// apk was previously signed, so we will sign it again
 
@@ -76,7 +74,7 @@ class TestFairyPlugin implements Plugin<Project> {
 									resignApk(tempFilename, sc)
 
 									// upload the signed apk file back to testfairy
-									json = uploadSignedApk(serverEndpoint, apiKey, tempFilename)
+									json = uploadSignedApk(project, serverEndpoint, apiKey, tempFilename)
 									(new File(tempFilename)).delete()
 								}
 
@@ -137,28 +135,37 @@ class TestFairyPlugin implements Plugin<Project> {
 	/**
 	 * Upload an APK using /api/upload REST service.
 	 *
+	 * @param project
 	 * @param serverEndpoint
 	 * @param apiKey
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	Object uploadApk(String serverEndpoint, String apiKey, String apkFilename) {
+	Object uploadApk(Project project, String serverEndpoint, String apiKey, String apkFilename) {
 		String url = "${serverEndpoint}/api/upload"
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(apiKey))
 		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
+
+		if (project.hasProperty("testfairyChangelog")) {
+			// optional: testfairyChangelog, as passed through -P
+			String changelog = project.property("testfairyChangelog")
+			entity.addPart('changelog', new StringBody(changelog))
+		}
+
 		return post(url, entity)
 	}
 
 	/**
 	 * Upload a signed APK using /api/upload-signed REST service.
 	 *
+	 * @param project
 	 * @param serverEndpoint
 	 * @param apiKey
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	Object uploadSignedApk(String serverEndpoint, String apiKey, String apkFilename) {
+	Object uploadSignedApk(Project project, String serverEndpoint, String apiKey, String apkFilename) {
 		String url = "${serverEndpoint}/api/upload-signed"
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(apiKey))
