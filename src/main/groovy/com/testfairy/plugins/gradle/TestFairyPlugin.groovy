@@ -33,16 +33,16 @@ class TestFairyPlugin implements Plugin<Project> {
 
 				tasks.whenTaskAdded { task ->
 
-					project.("android").buildTypes.all { build ->
+					project.("android").applicationVariants.all { variant ->
 
 						// locate packageRelease and packageDebug tasks
-						def expectingTask = "package${build.name.capitalize()}".toString()
+						def expectingTask = "package${variant.name.capitalize()}".toString()
 						if (expectingTask.equals(task.name)) {
 
-							def buildName = build.name
+							def variantName = variant.name
 
 							// create new task with name such as testfairyRelease and testfairyDebug
-							def newTaskName = "testfairy${buildName.capitalize()}"
+							def newTaskName = "testfairy${variantName.capitalize()}"
 
 							project.task(newTaskName) << {
 
@@ -55,11 +55,8 @@ class TestFairyPlugin implements Plugin<Project> {
 								String apkFilename = task.outputFile.toString()
 								project.logger.info("Instrumenting ${apkFilename} using apiKey ${apiKey} and server ${serverEndpoint}")
 
-								// check if there's a signingConfig for this type
-								def isSigned = (android.hasProperty('signingConfigs') && android.signingConfigs.hasProperty(buildName))
-
 								def json = uploadApk(project, serverEndpoint, apiKey, apkFilename)
-								if (isSigned) {
+								if (variant.isSigningReady()) {
 									// apk was previously signed, so we will sign it again
 
 									// first, we need to download the instrumented apk
@@ -70,7 +67,7 @@ class TestFairyPlugin implements Plugin<Project> {
 									downloadFile(json.instrumented_url.toString(), tempFilename.toString())
 
 									// resign using gradle build settings
-									def sc = android.signingConfigs[buildName]
+									def sc = variant.signingConfig
 									resignApk(tempFilename, sc)
 
 									// upload the signed apk file back to testfairy
