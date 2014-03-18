@@ -55,7 +55,7 @@ class TestFairyPlugin implements Plugin<Project> {
 								String apkFilename = task.outputFile.toString()
 								project.logger.info("Instrumenting ${apkFilename} using apiKey ${apiKey} and server ${serverEndpoint}")
 
-								def json = uploadApk(project, serverEndpoint, apiKey, apkFilename)
+								def json = uploadApk(project, extension, apkFilename)
 								if (variant.isSigningReady()) {
 									// apk was previously signed, so we will sign it again
 
@@ -71,7 +71,7 @@ class TestFairyPlugin implements Plugin<Project> {
 									resignApk(tempFilename, sc)
 
 									// upload the signed apk file back to testfairy
-									json = uploadSignedApk(project, serverEndpoint, apiKey, tempFilename)
+									json = uploadSignedApk(project, extension, tempFilename)
 									(new File(tempFilename)).delete()
 								}
 
@@ -133,16 +133,14 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * Upload an APK using /api/upload REST service.
 	 *
 	 * @param project
-	 * @param serverEndpoint
-	 * @param apiKey
+	 * @param extension
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	Object uploadApk(Project project, String serverEndpoint, String apiKey, String apkFilename) {
+	Object uploadApk(Project project, TestFairyExtension extension, String apkFilename) {
+        String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
-		MultipartEntity entity = new MultipartEntity()
-		entity.addPart('api_key', new StringBody(apiKey))
-		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
+		MultipartEntity entity = buildEntity(extension, apkFilename)
 
 		if (project.hasProperty("testfairyChangelog")) {
 			// optional: testfairyChangelog, as passed through -P
@@ -157,18 +155,70 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * Upload a signed APK using /api/upload-signed REST service.
 	 *
 	 * @param project
-	 * @param serverEndpoint
-	 * @param apiKey
+	 * @param extension
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	Object uploadSignedApk(Project project, String serverEndpoint, String apiKey, String apkFilename) {
+	Object uploadSignedApk(Project project, TestFairyExtension extension, String apkFilename) {
+        String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload-signed"
-		MultipartEntity entity = new MultipartEntity()
-		entity.addPart('api_key', new StringBody(apiKey))
-		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
+		MultipartEntity entity = buildEntity(extension, apkFilename)
 		return post(url, entity)
 	}
+
+    /**
+     * Build MultipartEntity for API parameters on Upload of an APK
+     *
+     * @param extension
+     * @return MultipartEntity
+     */
+    MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename) {
+        String apiKey = extension.getApiKey()
+
+        Boolean iconWatermark = extension.getIconWatermark()
+        String video = extension.getVideo()
+        String videoQuality = extension.getVideoQuality()
+        String videoRate = extension.getVideoRate()
+        String testersGroups = extension.getTestersGroups()
+        String metrics = extension.getMetrics()
+        String comment = extension.getComment()
+
+        MultipartEntity entity = new MultipartEntity();
+        entity.addPart('api_key', new StringBody(apiKey))
+        entity.addPart('apk_file', new FileBody(new File(apkFilename)))
+
+        if (iconWatermark) {
+            entity.addPart('icon-watermark', new StringBody("on"));
+        } else {
+            entity.addPart('icon-watermark', new StringBody("off"));
+        }
+
+        if (video) {
+            entity.addPart('video', new StringBody(video))
+        }
+
+        if (videoQuality) {
+            entity.addPart('video-quality', new StringBody(videoQuality))
+        }
+
+        if (videoRate) {
+            entity.addPart('video-rate', new StringBody(videoRate))
+        }
+
+        if (testersGroups) {
+            entity.addPart('testers_groups', new StringBody(testersGroups))
+        }
+
+        if (metrics) {
+            entity.addPart('metrics', new StringBody(metrics))
+        }
+
+        if (comment) {
+            entity.addPart('comment', new StringBody(comment))
+        }
+
+        return entity;
+    }
 
 	/**
 	 * Remove all signature files from archive, turning it back to unsigned.
