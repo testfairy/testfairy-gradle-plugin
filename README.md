@@ -65,6 +65,23 @@ For example: to upload a debug build, run the following from terminal:
 Optionally, you can add a *changelog* to this build. This changelog will appear in your build notes and as a default message when inviting testers. For example:
 
     gradlew -PtestfairyChangelog="Fixed all bugs" testfairyDebug
+    
+Additional Parameters
+---------------------
+
+By default, the Gradle plugin will record all metrics, of highest quality video at 1 frames per second. However, all of these are available through build.gradle configuration. Please consider the following example:
+
+    android {
+        testfairyConfig {
+            metrics "cpu,memory,network,logcat"
+            video "wifi"
+            videoRate "0.5"
+            videoQuality "low"
+            maxDuration "15m"
+        }
+    }
+    
+The example above will make sure TestFairy records a low quality video, at a frame every 2 seconds, only if wifi is available. Max session duration for video is 15 minutes, and only cpu, memory, network and logcat metrics are recorded.
 
 Android Studio / IntelliJ
 -------------------------
