@@ -5,13 +5,15 @@ import org.gradle.api.*
 class TestFairyExtension {
 
 	private String apiKey
-    private Boolean iconWatermark = false
-    private String video = "on"
-    private String videoQuality = "high"
-    private String videoRate = "1.0"
-    private String testersGroups
-    private String metrics
-    private String comment
+	private Boolean iconWatermark = false
+	private String video = "on"
+	private String videoQuality = "high"
+	private String videoRate = "1.0"
+	private String testersGroups
+	private String maxDuration
+	private String metrics
+	private String comment
+
 	private String serverEndpoint = "https://app.testfairy.com"
 
 	TestFairyExtension(Project project) {
@@ -25,61 +27,69 @@ class TestFairyExtension {
 		return apiKey
 	}
 
-    void iconWatermark(Boolean watermark) {
-        this.iconWatermark = watermark
-    }
+	void iconWatermark(Boolean watermark) {
+		this.iconWatermark = watermark
+	}
 
-    Boolean getIconWatermark() {
-        return iconWatermark
-    }
+	Boolean getIconWatermark() {
+		return iconWatermark
+	}
 
-    void video(String video) {
-        this.video = video
-    }
+	void video(String video) {
+		this.video = video
+	}
 
-    String getVideo() {
-        return video
-    }
+	String getVideo() {
+		return video
+	}
 
-    void videoQuality(String value) {
-        this.videoQuality = value
-    }
+	void videoQuality(String value) {
+		this.videoQuality = value
+	}
 
-    String getVideoQuality() {
-        return videoQuality
-    }
+	String getVideoQuality() {
+		return videoQuality
+	}
 
-    void videoRate(String value) {
-        this.videoRate = value
-    }
+	void videoRate(String value) {
+		this.videoRate = value
+	}
 
-    String getVideoRate() {
-        return videoRate
-    }
+	String getVideoRate() {
+		return videoRate
+	}
 
-    void testersGroups(String value) {
-        this.testersGroups = value
-    }
+	void testersGroups(String value) {
+		this.testersGroups = value
+	}
 
-    String getTestersGroups() {
-        return testersGroups
-    }
+	String getTestersGroups() {
+		return testersGroups
+	}
 
-    void metrics(String value) {
-        this.metrics = value
-    }
+	void metrics(String value) {
+		this.metrics = value
+	}
 
-    String getMetrics() {
-        return metrics
-    }
+	String getMetrics() {
+		return metrics
+	}
 
-    void comment(String value) {
-        this.comment = value
-    }
+	void maxDuration(String value) {
+		this.maxDuration = value
+	}
 
-    String getComment() {
-        return comment
-    }
+	String getMaxDuration() {
+		return maxDuration
+	}
+
+	void comment(String value) {
+		this.comment = value
+	}
+
+	String getComment() {
+		return comment
+	}
 
 	void serverEndpoint(String value) {
 		this.serverEndpoint = value
@@ -88,6 +98,5 @@ class TestFairyExtension {
 	String getServerEndpoint() {
 		return serverEndpoint
 	}
-		
 }
 
