@@ -20,7 +20,7 @@ A typical TestFairy Gradle Plugin installation takes less than 20 seconds. Insta
 
         apply plugin: 'testfairy'
 
- 4. Configure your TstFairy API key by adding this to your "*android*" section: (Your TestFairy API key is in your account settings)
+ 4. Configure your TestFairy API key by adding this to your "*android*" section: (Your TestFairy API key is in your account settings)
 
         testfairyConfig {
             apiKey "1234567890abcdef"
