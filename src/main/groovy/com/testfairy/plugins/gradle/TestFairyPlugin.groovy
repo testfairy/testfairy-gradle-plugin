@@ -94,6 +94,12 @@ class TestFairyPlugin implements Plugin<Project> {
 			return jarsigner
 		}
 
+		// try going into java_home/bin for JDK6 on OSX Mavericks
+		jarsigner = FilenameUtils.normalize(java_home + "/bin/jarsigner" + ext)
+		if(new File(jarsigner).exists()) {
+			return jarsigner
+		}
+
 		// try going up one directory and into bin, JDK7 on Mac is layed out this way
 		jarsigner = FilenameUtils.normalize(java_home + "/../bin/jarsigner" + ext)
 		if (new File(jarsigner).exists()) {
