@@ -78,10 +78,11 @@ By default, the Gradle plugin will record all metrics, of highest quality video 
             videoRate "0.5"
             videoQuality "low"
             maxDuration "15m"
+            iconWatermark true
         }
     }
     
-The example above will make sure TestFairy records a low quality video, at a frame every 2 seconds, only if wifi is available. Max session duration for video is 15 minutes, and only cpu, memory, network and logcat metrics are recorded.
+The example above will make sure TestFairy records a low quality video, at a frame every 2 seconds, only if wifi is available. Max session duration for video is 15 minutes, and only cpu, memory, network and logcat metrics are recorded. And watermark will be added to the icon to distinguish TestFairy builds.
 
 Android Studio / IntelliJ
 -------------------------
