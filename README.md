@@ -79,6 +79,7 @@ By default, the Gradle plugin will record all metrics, of highest quality video 
             videoQuality "low"
             maxDuration "15m"
             iconWatermark true
+            testersGroups "dev,qa,friends"
         }
     }
     
