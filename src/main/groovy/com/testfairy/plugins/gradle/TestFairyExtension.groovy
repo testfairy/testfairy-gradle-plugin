@@ -13,6 +13,8 @@ class TestFairyExtension {
 	private String maxDuration
 	private String metrics
 	private String comment
+	private Boolean notify = true
+	private Boolean autoUpdate = false
 
 	private String serverEndpoint = "https://app.testfairy.com"
 
@@ -97,6 +99,22 @@ class TestFairyExtension {
 
 	String getServerEndpoint() {
 		return serverEndpoint
+	}
+
+	void notify(Boolean value) {
+		this.notify = value
+	}
+
+	Boolean getNotify() {
+		return notify
+	}
+
+	void autoUpdate(Boolean value) {
+		this.autoUpdate = value;
+	}
+
+	Boolean getAutoUpdate() {
+		return autoUpdate;
 	}
 }
 
