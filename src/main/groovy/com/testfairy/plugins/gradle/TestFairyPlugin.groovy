@@ -94,6 +94,12 @@ class TestFairyPlugin implements Plugin<Project> {
 			return jarsigner
 		}
 
+		// try in java_home/bin
+		jarsigner = FilenameUtils.normalize(java_home + "/bin/jarsigner" + ext)
+		if (new File(jarsigner).exists()) {
+			return jarsigner
+		}
+
 		// try going up one directory and into bin, JDK7 on Mac is layed out this way
 		jarsigner = FilenameUtils.normalize(java_home + "/../bin/jarsigner" + ext)
 		if (new File(jarsigner).exists()) {
@@ -328,6 +334,12 @@ class TestFairyPlugin implements Plugin<Project> {
 			entity.addPart('testers-groups', new StringBody(extension.getTestersGroups()))
 		}
 
+		// add notify "on" or "off"
+		entity.addPart('notify', new StringBody(extension.getNotify() ? "on" : "off"))
+
+		// add auto-update "on" or "off"
+		entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
+
 		return post(url, entity)
 	}
 
@@ -340,39 +352,38 @@ class TestFairyPlugin implements Plugin<Project> {
 	MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename) {
 		String apiKey = extension.getApiKey()
 
-		Boolean iconWatermark = extension.getIconWatermark()
-		String video = extension.getVideo()
-		String videoQuality = extension.getVideoQuality()
-		String videoRate = extension.getVideoRate()
-		String metrics = extension.getMetrics()
-
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(apiKey))
 		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
 
-		if (iconWatermark) {
+		if (extension.getIconWatermark()) {
 			// if omitted, default value is "off"
 			entity.addPart('icon-watermark', new StringBody("on"))
 		}
 
-		if (video) {
+		if (extension.getVideo()) {
 			// if omitted, default value is "on"
-			entity.addPart('video', new StringBody(video))
+			entity.addPart('video', new StringBody(extension.getVideo()))
 		}
 
-		if (videoQuality) {
+		if (extension.getVideoQuality()) {
 			// if omitted, default value is "high"
-			entity.addPart('video-quality', new StringBody(videoQuality))
+			entity.addPart('video-quality', new StringBody(extension.getVideoQuality()))
 		}
 
-		if (videoRate) {
+		if (extension.getVideoRate()) {
 			// if omitted, default is 1 frame per second (videoRate = 1.0)
-			entity.addPart('video-rate', new StringBody(videoRate))
+			entity.addPart('video-rate', new StringBody(extension.getVideoRate()))
 		}
 
-		if (metrics) {
+		if (extension.getMetrics()) {
 			// if omitted, by default will record as much as possible
-			entity.addPart('metrics', new StringBody(metrics))
+			entity.addPart('metrics', new StringBody(extension.getMetrics()))
+		}
+
+		if (extension.getMaxDuration()) {
+			// override default value
+			entity.addPart('max-duration', new StringBody(extension.getMaxDuration()))
 		}
 
 		return entity
