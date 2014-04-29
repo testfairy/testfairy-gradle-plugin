@@ -165,7 +165,7 @@ class TestFairyPlugin implements Plugin<Project> {
 									project.logger.debug("Added api_key to download url, and is now ${instrumentedUrl}")
 
 									String baseName = FilenameUtils.getBaseName(apkFilename)
-									String tempFilename = "${tempDir}/testfairy-${baseName}.apk".toString()
+									String tempFilename = FilenameUtils.normalize("${tempDir}/testfairy-${baseName}.apk".toString());
 									project.logger.debug("Downloading instrumented APK onto ${tempFilename}")
 									downloadFile(instrumentedUrl, tempFilename)
 
@@ -289,7 +289,9 @@ class TestFairyPlugin implements Plugin<Project> {
 		HttpGet httpget = new HttpGet(url)
 		HttpResponse response = httpClient.execute(httpget)
 		HttpEntity entity = response.getEntity()
-		IOUtils.copy(entity.getContent(), new FileOutputStream(localFilename))
+        FileOutputStream fis = new FileOutputStream(localFilename);
+        IOUtils.copy(entity.getContent(), fis)
+        fis.close();
 	}
 
 	/**
