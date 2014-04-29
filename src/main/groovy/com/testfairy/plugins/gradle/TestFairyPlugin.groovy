@@ -289,9 +289,10 @@ class TestFairyPlugin implements Plugin<Project> {
 		HttpGet httpget = new HttpGet(url)
 		HttpResponse response = httpClient.execute(httpget)
 		HttpEntity entity = response.getEntity()
-        FileOutputStream fis = new FileOutputStream(localFilename);
-        IOUtils.copy(entity.getContent(), fis)
-        fis.close();
+
+		FileOutputStream fis = new FileOutputStream(localFilename);
+		IOUtils.copy(entity.getContent(), fis)
+		fis.close();
 	}
 
 	/**
