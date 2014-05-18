@@ -60,6 +60,25 @@ class TestFairyPlugin implements Plugin<Project> {
 		throw new GradleException("Could not find 'zip' in path, please configure and run again")
 	}
 
+	private String getSdkDirectory(Project project) {
+		def sdkDir
+
+		Properties properties = new Properties()
+		File localProps = project.rootProject.file('local.properties')
+		if (localProps.exists()) {
+			properties.load(localProps.newDataInputStream())
+			sdkDir = properties.getProperty('sdk.dir')
+		} else {
+			sdkDir = System.getenv('ANDROID_HOME')
+		}
+
+		if (!sdkDir) {
+			throw new ProjectConfigurationException("Cannot find android sdk. Make sure sdk.dir is defined in local.properties or the environment variable ANDROID_HOME is set.", null)
+		}
+
+		return sdkDir.toString()
+	}
+
 	/**
 	 * Locates zipalign tool on disk.
 	 *
@@ -68,12 +87,12 @@ class TestFairyPlugin implements Plugin<Project> {
 	 */
 	private String locateZipalign(Project project) {
 
-		def sdkDirectory = project.plugins.getPlugin("android").getSdkDirectory()
-		project.logger.info("Android SDK directory is available at ${sdkDirectory}")
-
-		def sdkParser = project.plugins.getPlugin("android").getSdkParser()
-		if (sdkParser.getZipAlign() != null && sdkParser.getZipAlign().exists()) {
-			return sdkParser.getZipAlign().getAbsolutePath()
+		String sdkDirectory = getSdkDirectory(project)
+		
+		String ext = isWindows() ? ".exe" : ""
+		File zipalign = new File(FilenameUtils.normalize(sdkDirectory + "/tools/zipalign" + ext))
+		if (zipalign.exists()) {
+			return zipalign.getAbsolutePath()
 		}
 
 		throw new GradleException("Could not locate zipalign, please validate 'buildToolsVersion' settings")
