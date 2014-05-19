@@ -1,10 +1,11 @@
 package com.testfairy.plugins.gradle
 
 import org.gradle.api.*
-import org.gradle.api.tasks.*
-import groovyx.net.http.*
 import java.util.zip.*
 import org.apache.http.*
+import org.apache.http.auth.AuthScope
+import org.apache.http.auth.UsernamePasswordCredentials
+import org.apache.http.conn.params.ConnRoutePNames
 import org.apache.http.impl.client.*
 import org.apache.http.client.methods.*
 import org.apache.http.entity.mime.*
@@ -262,11 +263,10 @@ class TestFairyPlugin implements Plugin<Project> {
 	}
 
 	Object post(String url, MultipartEntity entity) {
-		DefaultHttpClient httpClient = new DefaultHttpClient()
 		HttpPost post = new HttpPost(url)
 		post.addHeader("User-Agent", "TestFairy Gradle Plugin")
 		post.setEntity(entity)
-		HttpResponse response = httpClient.execute(post)
+		HttpResponse response = buildClient().execute(post)
 
 		String json = EntityUtils.toString(response.getEntity())
 		def parser = new JsonSlurper()
@@ -285,9 +285,8 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param localFilename
 	 */
 	void downloadFile(String url, String localFilename) {
-		DefaultHttpClient httpClient = new DefaultHttpClient()
 		HttpGet httpget = new HttpGet(url)
-		HttpResponse response = httpClient.execute(httpget)
+		HttpResponse response = buildClient().execute(httpget)
 		HttpEntity entity = response.getEntity()
 
 		FileOutputStream fis = new FileOutputStream(localFilename);
@@ -464,6 +463,24 @@ class TestFairyPlugin implements Plugin<Project> {
 		if (proc.exitValue()) {
 			throw new GradleException("Could not jarsign ${apkFilename}, used this command:\n${command}")
 		}
+	}
+
+
+	DefaultHttpClient buildClient() {
+		DefaultHttpClient httpClient = new DefaultHttpClient()
+		def proxyHost = System.getProperty("http.proxyHost")
+		if(proxyHost != null) {
+			def proxyPort = Integer.parseInt(System.getProperty("http.proxyPort"));
+			HttpHost proxy = new HttpHost(proxyHost, proxyPort);
+			def proxyUser = System.getProperty("http.proxyUser");
+			if (proxyUser != null) {
+				httpClient.getCredentialsProvider().setCredentials(
+						new AuthScope(proxyUser, proxyPort),
+						new UsernamePasswordCredentials(proxyUser, System.getProperty("http.proxyPassword")));
+			}
+			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+		}
+		return httpClient;
 	}
 }
 
