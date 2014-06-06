@@ -10,7 +10,7 @@ dependencies {
 apply plugin: 'maven'
 
 group = 'com.testfairy.plugins.gradle'
-version = '1.6'
+version = '1.6-volvo1'
 
 repositories {
 	mavenCentral()
