@@ -95,6 +95,15 @@ class TestFairyPlugin implements Plugin<Project> {
 			return zipalign.getAbsolutePath()
 		}
 
+		// try different versions of build-tools
+		String[] versions = ["20.0.0", "19.1.0"]
+		for (String version: versions) {
+			File f = new File(FilenameUtils.normalize(sdkDirectory + "/build-tools/" + version + "/zipalign" + ext))
+			if (f.exists()) {
+				return f.getAbsolutePath()
+			}
+		}
+
 		throw new GradleException("Could not locate zipalign, please validate 'buildToolsVersion' settings")
 	}
 
