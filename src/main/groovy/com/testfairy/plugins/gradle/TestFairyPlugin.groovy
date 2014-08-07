@@ -225,7 +225,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 *
 	 * @param extension
 	 */
-	void assertValidApiKey(extension) {
+	private void assertValidApiKey(extension) {
 		if (extension.getApiKey() == null || extension.getApiKey().equals("")) {
 			throw new GradleException("Please configure your TestFairy apiKey before building")
 		}
@@ -237,7 +237,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return List<String>
 	 */
-	List<String> getApkFiles(String apkFilename) {
+	private List<String> getApkFiles(String apkFilename) {
 		List<String> files = new ArrayList<String>()
 
 		ZipFile zf = new ZipFile(apkFilename)
@@ -276,7 +276,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return boolean
 	 */
-	boolean isApkSigned(String apkFilename) {
+	private boolean isApkSigned(String apkFilename) {
 
 		List<String> filenames = getApkFiles(apkFilename)
 		for (String f: filenames) {
@@ -289,7 +289,7 @@ class TestFairyPlugin implements Plugin<Project> {
 		return false
 	}
 
-	Object post(String url, MultipartEntity entity) {
+	private Object post(String url, MultipartEntity entity) {
 		DefaultHttpClient httpClient = new DefaultHttpClient()
 		HttpPost post = new HttpPost(url)
 		post.addHeader("User-Agent", "TestFairy Gradle Plugin")
@@ -312,7 +312,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param url
 	 * @param localFilename
 	 */
-	void downloadFile(String url, String localFilename) {
+	private void downloadFile(String url, String localFilename) {
 		DefaultHttpClient httpClient = new DefaultHttpClient()
 		HttpGet httpget = new HttpGet(url)
 		HttpResponse response = httpClient.execute(httpget)
@@ -331,7 +331,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	Object uploadApk(Project project, TestFairyExtension extension, String apkFilename) {
+	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
 		MultipartEntity entity = buildEntity(extension, apkFilename)
@@ -352,7 +352,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	Object uploadSignedApk(TestFairyExtension extension, String apkFilename) {
+	private Object uploadSignedApk(TestFairyExtension extension, String apkFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload-signed"
 
@@ -380,7 +380,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param extension
 	 * @return MultipartEntity
 	 */
-	MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename) {
+	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename) {
 		String apiKey = extension.getApiKey()
 
 		MultipartEntity entity = new MultipartEntity()
@@ -415,6 +415,11 @@ class TestFairyPlugin implements Plugin<Project> {
 		if (extension.getMaxDuration()) {
 			// override default value
 			entity.addPart('max-duration', new StringBody(extension.getMaxDuration()))
+		}
+
+		if (extension.getRecordOnBackground()) {
+			// enable record on background option
+			entity.addPart('record-on-background', new StringBody("on"));
 		}
 
 		return entity

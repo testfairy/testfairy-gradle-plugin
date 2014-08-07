@@ -15,6 +15,7 @@ class TestFairyExtension {
 	private String comment
 	private Boolean notify = true
 	private Boolean autoUpdate = false
+	private Boolean recordOnBackground = false
 
 	private String serverEndpoint = "https://app.testfairy.com"
 
@@ -115,6 +116,14 @@ class TestFairyExtension {
 
 	Boolean getAutoUpdate() {
 		return autoUpdate;
+	}
+
+	void recordOnBackground(Boolean value) {
+		this.recordOnBackground = value;
+	}
+
+	Boolean getRecordOnBackground() {
+		return recordOnBackground;
 	}
 }
 
