@@ -16,6 +16,7 @@ class TestFairyExtension {
 	private Boolean notify = true
 	private Boolean autoUpdate = false
 	private Boolean recordOnBackground = false
+	private Boolean uploadProguardMapping = false
 
 	private String serverEndpoint = "https://app.testfairy.com"
 
@@ -125,5 +126,13 @@ class TestFairyExtension {
 	Boolean getRecordOnBackground() {
 		return recordOnBackground;
 	}
+
+    void uploadProguardMapping(Boolean value){
+        this.uploadProguardMapping = value;
+    }
+
+    Boolean getUploadProguardMapping(){
+        return uploadProguardMapping;
+    }
 }
 

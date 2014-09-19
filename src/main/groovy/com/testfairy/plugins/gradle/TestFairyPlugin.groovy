@@ -179,7 +179,11 @@ class TestFairyPlugin implements Plugin<Project> {
 								def tempDir = task.temporaryDir.getAbsolutePath()
 								project.logger.debug("Saving temporary files to ${tempDir}")
 
-								def json = uploadApk(project, extension, apkFilename)
+                                def proguardMappingTxtFilename = variant.buildType.runProguard && extension.uploadProguardMapping ?
+                                        new File(variant.processResources.proguardOutputFile.parent, 'mapping.txt').absolutePath : null
+                                project.logger.info("Mapping file path: " + proguardMappingTxtFilename)
+
+								def json = uploadApk(project, extension, apkFilename, proguardMappingTxtFilename)
 								if (variant.isSigningReady() && isApkSigned(apkFilename)) {
 									// apk was previously signed, so we will sign it again
 									project.logger.debug("Signing is ready, and APK was previously signed")
@@ -331,10 +335,10 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename) {
+	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingTxtFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
-		MultipartEntity entity = buildEntity(extension, apkFilename)
+		MultipartEntity entity = buildEntity(extension, apkFilename, mappingTxtFilename)
 
 		if (project.hasProperty("testfairyChangelog")) {
 			// optional: testfairyChangelog, as passed through -P
@@ -380,12 +384,14 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param extension
 	 * @return MultipartEntity
 	 */
-	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename) {
+	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingTxtFilename) {
 		String apiKey = extension.getApiKey()
 
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(apiKey))
 		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
+        if (mappingTxtFilename != null)
+            entity.addPart('symbols_file', new FileBody(new File(mappingTxtFilename)))
 
 		if (extension.getIconWatermark()) {
 			// if omitted, default value is "off"
