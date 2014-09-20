@@ -463,7 +463,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param sc
 	 */
 	void signApkFile(String apkFilename, sc) {
-		def command = [jarSignerPath, "-keystore", sc.storeFile, "-storepass", sc.storePassword, "-digestalg", "SHA1", "-sigalg", "MD5withRSA", apkFilename, sc.keyAlias]
+		def command = [jarSignerPath, "-keystore", sc.storeFile, "-storepass", sc.storePassword, "-keypass", sc.keyPassword, "-digestalg", "SHA1", "-sigalg", "MD5withRSA", apkFilename, sc.keyAlias]
 		def proc = command.execute()
 		proc.consumeProcessOutput()
 		proc.waitFor()
