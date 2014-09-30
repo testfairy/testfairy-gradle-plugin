@@ -1,15 +1,15 @@
 package com.testfairy.plugins.gradle
 
 import org.gradle.api.*
-import org.gradle.api.tasks.*
-import groovyx.net.http.*
 import java.util.zip.*
 import org.apache.http.*
+import org.apache.http.auth.*
 import org.apache.http.impl.client.*
 import org.apache.http.client.methods.*
 import org.apache.http.entity.mime.*
 import org.apache.http.entity.mime.content.*
 import org.apache.http.util.EntityUtils
+import org.apache.http.conn.params.ConnRoutePNames
 import org.apache.commons.io.IOUtils
 import org.apache.commons.io.FilenameUtils
 import groovy.json.JsonSlurper
@@ -179,11 +179,22 @@ class TestFairyPlugin implements Plugin<Project> {
 								def tempDir = task.temporaryDir.getAbsolutePath()
 								project.logger.debug("Saving temporary files to ${tempDir}")
 
-                                def proguardMappingTxtFilename = variant.buildType.runProguard && extension.uploadProguardMapping ?
-                                        new File(variant.processResources.proguardOutputFile.parent, 'mapping.txt').absolutePath : null
-                                project.logger.info("Mapping file path: " + proguardMappingTxtFilename)
+								String proguardMappingFilename = null
+								if (variant.buildType.runProguard && extension.uploadProguardMapping) {
+									// proguard-mapping.txt upload is enabled
 
-								def json = uploadApk(project, extension, apkFilename, proguardMappingTxtFilename)
+									if (variant.metaClass.respondsTo(variant, "getMappingFile")) {
+										// getMappingFile was added in Android Plugin 0.13
+										proguardMappingFilename = variant.getMappingFile().toString()
+									} else {
+										// fallback to getProcessResources
+										proguardMappingFilename = new File(variant.getProcessResources().getProguardOutputFile().parent, 'mapping.txt').absolutePath.toString()
+									}
+
+									project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
+								}
+
+								def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
 								if (variant.isSigningReady() && isApkSigned(apkFilename)) {
 									// apk was previously signed, so we will sign it again
 									project.logger.debug("Signing is ready, and APK was previously signed")
@@ -293,6 +304,27 @@ class TestFairyPlugin implements Plugin<Project> {
 		return false
 	}
 
+	private DefaultHttpClient buildHttpClient() {
+		DefaultHttpClient httpClient = new DefaultHttpClient()
+
+		// configure proxy (patched by timothy-volvo, https://github.com/timothy-volvo/testfairy-gradle-plugin)
+		def proxyHost = System.getProperty("http.proxyHost")
+		if (proxyHost != null) {
+			def proxyPort = Integer.parseInt(System.getProperty("http.proxyPort"))
+			HttpHost proxy = new HttpHost(proxyHost, proxyPort)
+			def proxyUser = System.getProperty("http.proxyUser")
+			if (proxyUser != null) {
+				AuthScope authScope = new AuthScope(proxyUser, proxyPort)
+				Credentials credentials = new UsernamePasswordCredentials(proxyUser, System.getProperty("http.proxyPassword"))
+				httpClient.getCredentialsProvider().setCredentials(authScope, credentials)
+			}
+
+			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+		}
+
+		return httpClient;
+	}
+
 	private Object post(String url, MultipartEntity entity) {
 		DefaultHttpClient httpClient = new DefaultHttpClient()
 		HttpPost post = new HttpPost(url)
@@ -335,10 +367,10 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingTxtFilename) {
+	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
-		MultipartEntity entity = buildEntity(extension, apkFilename, mappingTxtFilename)
+		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
 
 		if (project.hasProperty("testfairyChangelog")) {
 			// optional: testfairyChangelog, as passed through -P
@@ -384,14 +416,16 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param extension
 	 * @return MultipartEntity
 	 */
-	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingTxtFilename) {
+	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
 		String apiKey = extension.getApiKey()
 
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(apiKey))
 		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
-        if (mappingTxtFilename != null)
-            entity.addPart('symbols_file', new FileBody(new File(mappingTxtFilename)))
+
+		if (mappingFilename != null) {
+			entity.addPart('symbols_file', new FileBody(new File(mappingFilename)))
+		}
 
 		if (extension.getIconWatermark()) {
 			// if omitted, default value is "off"
