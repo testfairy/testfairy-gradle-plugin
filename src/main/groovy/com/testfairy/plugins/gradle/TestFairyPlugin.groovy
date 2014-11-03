@@ -96,7 +96,7 @@ class TestFairyPlugin implements Plugin<Project> {
 		}
 
 		// try different versions of build-tools
-		String[] versions = ["20.0.0", "19.1.0"]
+		String[] versions = ["21.1.0","20.0.0", "19.1.0"]
 		for (String version: versions) {
 			File f = new File(FilenameUtils.normalize(sdkDirectory + "/build-tools/" + version + "/zipalign" + ext))
 			if (f.exists()) {
@@ -180,7 +180,7 @@ class TestFairyPlugin implements Plugin<Project> {
 								project.logger.debug("Saving temporary files to ${tempDir}")
 
 								String proguardMappingFilename = null
-								if (variant.buildType.runProguard && extension.uploadProguardMapping) {
+								if (variant.buildType.minifyEnabled && extension.uploadProguardMapping) {
 									// proguard-mapping.txt upload is enabled
 
 									if (variant.metaClass.respondsTo(variant, "getMappingFile")) {
