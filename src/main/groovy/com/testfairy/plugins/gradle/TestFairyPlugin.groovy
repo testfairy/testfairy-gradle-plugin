@@ -3,14 +3,13 @@ package com.testfairy.plugins.gradle
 import org.gradle.api.*
 import java.util.zip.*
 import org.apache.http.*
-import org.apache.http.auth.AuthScope
-import org.apache.http.auth.UsernamePasswordCredentials
-import org.apache.http.conn.params.ConnRoutePNames
+import org.apache.http.auth.*
 import org.apache.http.impl.client.*
 import org.apache.http.client.methods.*
 import org.apache.http.entity.mime.*
 import org.apache.http.entity.mime.content.*
 import org.apache.http.util.EntityUtils
+import org.apache.http.conn.params.ConnRoutePNames
 import org.apache.commons.io.IOUtils
 import org.apache.commons.io.FilenameUtils
 import groovy.json.JsonSlurper
@@ -96,6 +95,15 @@ class TestFairyPlugin implements Plugin<Project> {
 			return zipalign.getAbsolutePath()
 		}
 
+		// try different versions of build-tools
+		String[] versions = ["20.0.0", "19.1.0"]
+		for (String version: versions) {
+			File f = new File(FilenameUtils.normalize(sdkDirectory + "/build-tools/" + version + "/zipalign" + ext))
+			if (f.exists()) {
+				return f.getAbsolutePath()
+			}
+		}
+
 		throw new GradleException("Could not locate zipalign, please validate 'buildToolsVersion' settings")
 	}
 
@@ -171,7 +179,22 @@ class TestFairyPlugin implements Plugin<Project> {
 								def tempDir = task.temporaryDir.getAbsolutePath()
 								project.logger.debug("Saving temporary files to ${tempDir}")
 
-								def json = uploadApk(project, extension, apkFilename)
+								String proguardMappingFilename = null
+								if (variant.buildType.runProguard && extension.uploadProguardMapping) {
+									// proguard-mapping.txt upload is enabled
+
+									if (variant.metaClass.respondsTo(variant, "getMappingFile")) {
+										// getMappingFile was added in Android Plugin 0.13
+										proguardMappingFilename = variant.getMappingFile().toString()
+									} else {
+										// fallback to getProcessResources
+										proguardMappingFilename = new File(variant.getProcessResources().getProguardOutputFile().parent, 'mapping.txt').absolutePath.toString()
+									}
+
+									project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
+								}
+
+								def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
 								if (variant.isSigningReady() && isApkSigned(apkFilename)) {
 									// apk was previously signed, so we will sign it again
 									project.logger.debug("Signing is ready, and APK was previously signed")
@@ -217,7 +240,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 *
 	 * @param extension
 	 */
-	void assertValidApiKey(extension) {
+	private void assertValidApiKey(extension) {
 		if (extension.getApiKey() == null || extension.getApiKey().equals("")) {
 			throw new GradleException("Please configure your TestFairy apiKey before building")
 		}
@@ -229,7 +252,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return List<String>
 	 */
-	List<String> getApkFiles(String apkFilename) {
+	private List<String> getApkFiles(String apkFilename) {
 		List<String> files = new ArrayList<String>()
 
 		ZipFile zf = new ZipFile(apkFilename)
@@ -268,7 +291,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return boolean
 	 */
-	boolean isApkSigned(String apkFilename) {
+	private boolean isApkSigned(String apkFilename) {
 
 		List<String> filenames = getApkFiles(apkFilename)
 		for (String f: filenames) {
@@ -281,11 +304,32 @@ class TestFairyPlugin implements Plugin<Project> {
 		return false
 	}
 
-	Object post(String url, MultipartEntity entity) {
+	private DefaultHttpClient buildHttpClient() {
+		DefaultHttpClient httpClient = new DefaultHttpClient()
+
+		// configure proxy (patched by timothy-volvo, https://github.com/timothy-volvo/testfairy-gradle-plugin)
+		def proxyHost = System.getProperty("http.proxyHost")
+		if (proxyHost != null) {
+			def proxyPort = Integer.parseInt(System.getProperty("http.proxyPort"))
+			HttpHost proxy = new HttpHost(proxyHost, proxyPort)
+			def proxyUser = System.getProperty("http.proxyUser")
+			if (proxyUser != null) {
+				AuthScope authScope = new AuthScope(proxyUser, proxyPort)
+				Credentials credentials = new UsernamePasswordCredentials(proxyUser, System.getProperty("http.proxyPassword"))
+				httpClient.getCredentialsProvider().setCredentials(authScope, credentials)
+			}
+
+			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+		}
+
+		return httpClient;
+	}
+
+	private Object post(String url, MultipartEntity entity) {
+		DefaultHttpClient httpClient = new DefaultHttpClient()
 		HttpPost post = new HttpPost(url)
 		post.addHeader("User-Agent", "TestFairy Gradle Plugin")
 		post.setEntity(entity)
-		HttpResponse response = buildClient().execute(post)
 
 		String json = EntityUtils.toString(response.getEntity())
 		def parser = new JsonSlurper()
@@ -303,9 +347,9 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param url
 	 * @param localFilename
 	 */
-	void downloadFile(String url, String localFilename) {
+	private void downloadFile(String url, String localFilename) {
+		DefaultHttpClient httpClient = new DefaultHttpClient()
 		HttpGet httpget = new HttpGet(url)
-		HttpResponse response = buildClient().execute(httpget)
 		HttpEntity entity = response.getEntity()
 
 		FileOutputStream fis = new FileOutputStream(localFilename);
@@ -321,10 +365,10 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	Object uploadApk(Project project, TestFairyExtension extension, String apkFilename) {
+	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
-		MultipartEntity entity = buildEntity(extension, apkFilename)
+		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
 
 		if (project.hasProperty("testfairyChangelog")) {
 			// optional: testfairyChangelog, as passed through -P
@@ -342,7 +386,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	Object uploadSignedApk(TestFairyExtension extension, String apkFilename) {
+	private Object uploadSignedApk(TestFairyExtension extension, String apkFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload-signed"
 
@@ -370,12 +414,16 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param extension
 	 * @return MultipartEntity
 	 */
-	MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename) {
+	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
 		String apiKey = extension.getApiKey()
 
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(apiKey))
 		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
+
+		if (mappingFilename != null) {
+			entity.addPart('symbols_file', new FileBody(new File(mappingFilename)))
+		}
 
 		if (extension.getIconWatermark()) {
 			// if omitted, default value is "off"
@@ -405,6 +453,11 @@ class TestFairyPlugin implements Plugin<Project> {
 		if (extension.getMaxDuration()) {
 			// override default value
 			entity.addPart('max-duration', new StringBody(extension.getMaxDuration()))
+		}
+
+		if (extension.getRecordOnBackground()) {
+			// enable record on background option
+			entity.addPart('record-on-background', new StringBody("on"));
 		}
 
 		return entity
@@ -442,7 +495,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param sc
 	 */
 	void signApkFile(String apkFilename, sc) {
-		def command = [jarSignerPath, "-keystore", sc.storeFile, "-storepass", sc.storePassword, "-digestalg", "SHA1", "-sigalg", "MD5withRSA", apkFilename, sc.keyAlias]
+		def command = [jarSignerPath, "-keystore", sc.storeFile, "-storepass", sc.storePassword, "-keypass", sc.keyPassword, "-digestalg", "SHA1", "-sigalg", "MD5withRSA", apkFilename, sc.keyAlias]
 		def proc = command.execute()
 		proc.consumeProcessOutput()
 		proc.waitFor()
@@ -482,24 +535,6 @@ class TestFairyPlugin implements Plugin<Project> {
 		if (proc.exitValue()) {
 			throw new GradleException("Could not jarsign ${apkFilename}, used this command:\n${command}")
 		}
-	}
-
-
-	DefaultHttpClient buildClient() {
-		DefaultHttpClient httpClient = new DefaultHttpClient()
-		def proxyHost = System.getProperty("http.proxyHost")
-		if(proxyHost != null) {
-			def proxyPort = Integer.parseInt(System.getProperty("http.proxyPort"));
-			HttpHost proxy = new HttpHost(proxyHost, proxyPort);
-			def proxyUser = System.getProperty("http.proxyUser");
-			if (proxyUser != null) {
-				httpClient.getCredentialsProvider().setCredentials(
-						new AuthScope(proxyUser, proxyPort),
-						new UsernamePasswordCredentials(proxyUser, System.getProperty("http.proxyPassword")));
-			}
-			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-		}
-		return httpClient;
 	}
 }
 
