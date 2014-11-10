@@ -110,6 +110,6 @@ Bugs
 
 Please send bug reports to support@testfairy.com 
 
-[1]: https://raw2.github.com/testfairy/testfairy-gradle-plugin/master/docs/images/preview-open-edit-configurations.png
-[2]: https://raw2.github.com/testfairy/testfairy-gradle-plugin/master/docs/images/preview-add-gradle-task.png
+[1]: https://raw.githubusercontent.com/testfairy/testfairy-gradle-plugin/master/docs/images/preview-open-edit-configurations.png
+[2]: https://raw.githubusercontent.com/testfairy/testfairy-gradle-plugin/master/docs/images/preview-add-gradle-task.png
             
