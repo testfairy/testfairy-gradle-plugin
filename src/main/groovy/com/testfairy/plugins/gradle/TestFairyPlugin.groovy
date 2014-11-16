@@ -1,6 +1,8 @@
 package com.testfairy.plugins.gradle
 
 import org.gradle.api.*
+
+import java.util.regex.Matcher
 import java.util.zip.*
 import org.apache.http.*
 import org.apache.http.auth.*
@@ -15,6 +17,11 @@ import org.apache.commons.io.FilenameUtils
 import groovy.json.JsonSlurper
 
 class TestFairyPlugin implements Plugin<Project> {
+	/**
+	 * The minimum build-tools version at which the zipalign tool was relocated within the versioned build-tools
+	 * directory, instead of the 'tools' folder in the SDK.
+	 */
+	private static final int ZIPALIGN_BUILD_TOOLS_MIN_VERSION = 19;
 
 	private String apiKey
 
@@ -95,12 +102,33 @@ class TestFairyPlugin implements Plugin<Project> {
 			return zipalign.getAbsolutePath()
 		}
 
-		// try different versions of build-tools
-		String[] versions = ["21.1.0","20.0.0", "19.1.0"]
-		for (String version: versions) {
-			File f = new File(FilenameUtils.normalize(sdkDirectory + "/build-tools/" + version + "/zipalign" + ext))
-			if (f.exists()) {
-				return f.getAbsolutePath()
+		// get versioned build-tools directories, sorted by highest to lowest version
+		File[] buildToolsVersions = new File(FilenameUtils.normalize(sdkDirectory + "/build-tools/")).listFiles()
+		buildToolsVersions.sort().reverse()
+
+		// search for zipalign within the build-tools directories
+		def pattern = ~/(.*)(build-tools)(\\/|\\)([0-9]+)(.*)/
+
+		for (String buildToolsVersion : buildToolsVersions) {
+			project.logger.debug("Checking for zipalign in build-tools directory: $buildToolsVersion")
+
+			// check if the path matches the expected structure for a versioned build-tools directory
+			Matcher matcher = pattern.matcher(buildToolsVersion)
+			if (matcher.matches() && matcher.groupCount() >= 4) {
+				// group 4 is the major version of the build-tools, e.g. for 21.0.2 it will be 21
+				String versionMajor = matcher.group(4)
+
+				// search for zipalign within the build-tools directory if it has a version
+				// higher than or equal to ZIPALIGN_BUILD_TOOLS_MIN_VERSION
+				if (versionMajor.isInteger() && Integer.parseInt(versionMajor) >= ZIPALIGN_BUILD_TOOLS_MIN_VERSION) {
+					project.logger.debug("Possible match for zipalign in build-tools directory: $buildToolsVersion")
+
+					File f = new File(FilenameUtils.normalize("$buildToolsVersion/zipalign$ext"))
+					if (f.exists()) {
+						project.logger.debug("Found zipalign: $f")
+						return f.getAbsolutePath()
+					}
+				}
 			}
 		}
 
