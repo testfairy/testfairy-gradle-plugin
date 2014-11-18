@@ -1,5 +1,7 @@
 package com.testfairy.plugins.gradle
 
+import com.testfairy.uploader.*
+
 import org.gradle.api.*
 import java.util.zip.*
 import org.apache.http.*
@@ -32,8 +34,20 @@ class TestFairyPlugin implements Plugin<Project> {
 	}
 
 	private void configureJavaTools(Project project) {
-		jarSignerPath = locateJarsigner(project)
-		zipAlignPath = locateZipalign(project)
+
+		String sdkDirectory = getSdkDirectory()
+		SdkEnvironment env = new SdkEnvironment(sdkDirectory)
+
+		jarSignerPath = env.locateJarsigner()
+		if (jarSignerPath == null) {
+			throw new GradleException("Could not locate jarsigner, please update java.home property")
+		}
+
+		zipAlignPath = env.locateZipalign()
+		if (zipAlignPath == null) {
+			throw new GradleException("Could not locate zipalign, please validate 'buildToolsVersion' settings")
+		}
+
 		zipPath = locateZip(project)
 	}
 
@@ -77,64 +91,6 @@ class TestFairyPlugin implements Plugin<Project> {
 		}
 
 		return sdkDir.toString()
-	}
-
-	/**
-	 * Locates zipalign tool on disk.
-	 *
-	 * @param project
-	 * @return String
-	 */
-	private String locateZipalign(Project project) {
-
-		String sdkDirectory = getSdkDirectory(project)
-		
-		String ext = isWindows() ? ".exe" : ""
-		File zipalign = new File(FilenameUtils.normalize(sdkDirectory + "/tools/zipalign" + ext))
-		if (zipalign.exists()) {
-			return zipalign.getAbsolutePath()
-		}
-
-		// try different versions of build-tools
-		String[] versions = ["20.0.0", "19.1.0"]
-		for (String version: versions) {
-			File f = new File(FilenameUtils.normalize(sdkDirectory + "/build-tools/" + version + "/zipalign" + ext))
-			if (f.exists()) {
-				return f.getAbsolutePath()
-			}
-		}
-
-		throw new GradleException("Could not locate zipalign, please validate 'buildToolsVersion' settings")
-	}
-
-	/**
-	 * Locates jarsigner executable on disk. Jarsigner is required since we are
-	 * re-signing the APK.
-	 *
-	 * @return String path
-	 */
-	private String locateJarsigner(Project project) {
-		def java_home = System.properties.get("java.home")
-
-		def ext = isWindows() ? ".exe" : ""
-		String jarsigner = java_home + "/jarsigner" + ext
-		if (new File(jarsigner).exists()) {
-			return jarsigner
-		}
-
-		// try in java_home/bin
-		jarsigner = FilenameUtils.normalize(java_home + "/bin/jarsigner" + ext)
-		if (new File(jarsigner).exists()) {
-			return jarsigner
-		}
-
-		// try going up one directory and into bin, JDK7 on Mac is layed out this way
-		jarsigner = FilenameUtils.normalize(java_home + "/../bin/jarsigner" + ext)
-		if (new File(jarsigner).exists()) {
-			return jarsigner
-		}
-
-		throw new GradleException("Could not locate jarsigner, please update java.home property")
 	}
 
 	@Override
