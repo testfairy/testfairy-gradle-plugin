@@ -180,7 +180,7 @@ class TestFairyPlugin implements Plugin<Project> {
 								project.logger.debug("Saving temporary files to ${tempDir}")
 
 								String proguardMappingFilename = null
-								if (variant.buildType.runProguard && extension.uploadProguardMapping) {
+								if (isMinifyEnabledCompat(variant.buildType) && extension.uploadProguardMapping) {
 									// proguard-mapping.txt upload is enabled
 
 									if (variant.metaClass.respondsTo(variant, "getMappingFile")) {
@@ -243,6 +243,18 @@ class TestFairyPlugin implements Plugin<Project> {
 	private void assertValidApiKey(extension) {
 		if (extension.getApiKey() == null || extension.getApiKey().equals("")) {
 			throw new GradleException("Please configure your TestFairy apiKey before building")
+		}
+	}
+
+	/**
+	 * Returns true if code minification is enabled for this build type.
+	 * Added to work around runProguard property being renamed to isMinifyEnabled in Android Gradle Plugin 0.14.0
+	 */
+	private boolean isMinifyEnabledCompat(buildType) {
+		if (buildType.respondsTo("isMinifyEnabled")) {
+			return buildType.isMinifyEnabled()
+		} else {
+			return buildType.runProguard
 		}
 	}
 
