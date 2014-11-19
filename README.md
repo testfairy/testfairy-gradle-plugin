@@ -92,6 +92,11 @@ The example above will make sure TestFairy records a low quality video, at a fra
 
 For more details about parameter values, see [this](http://docs.testfairy.com/Upload_API.html).
 
+Using a Web Proxy
+--------------------------------
+
+Behind a firewall at work? TestFairy Gradle Plugin supports HTTP proxy via "*http.proxyHost*" system property. Please refer to the [Accessing The Web Via a Proxy](http://www.gradle.org/docs/current/userguide/build_environment.html#sec:accessing_the_web_via_a_proxy) section in the Gradle user guide document.
+
 Android Studio / IntelliJ
 -------------------------
 
