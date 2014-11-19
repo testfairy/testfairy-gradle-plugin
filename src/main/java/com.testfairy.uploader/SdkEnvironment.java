@@ -1,7 +1,10 @@
 package com.testfairy.uploader;
 
-import java.lang.Override;
+import java.io.File;
 import java.lang.String;
+import java.util.Iterator;
+import java.util.Collection;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.NameFileFilter;
@@ -13,6 +16,10 @@ public class SdkEnvironment
 
 	public SdkEnvironment(String sdkDirectory) {
 		this.sdkDirectory = sdkDirectory;
+	}
+
+	private boolean isWindows() {
+		return System.getProperty("os.name").toLowerCase().contains("windows");
 	}
 
 	/**
@@ -28,14 +35,21 @@ public class SdkEnvironment
 			return zipalign.getAbsolutePath();
 		}
 
-		FileUtils.listFiles(new File(sdkDirectory), new NameFileFilter("zipalign"), TrueFileFilter.INSTANCE)
-		// try different versions of build-tools
-		String[] versions = ["20.0.0", "19.1.0"];
-		for (String version: versions) {
-			File f = new File(FilenameUtils.normalize(sdkDirectory + "/build-tools/" + version + "/zipalign" + ext));
-			if (f.exists()) {
-				return f.getAbsolutePath();
+		// find any zipfiles under the sdk/build-tools
+		Collection<File> files = FileUtils.listFiles(new File(sdkDirectory + "/build-tools"), new NameFileFilter("zipalign" + ext), TrueFileFilter.INSTANCE);
+		if (files.size() > 0) {
+			// found at least one zipalign file, look up the highest version
+			Iterator<File> it = files.iterator();
+			zipalign = it.next();
+			while (it.hasNext()) {
+				File f = it.next();
+				if (zipalign.compareTo(f) < 0) {
+					// f is newer
+					zipalign = f;
+				}
 			}
+
+			return zipalign.getAbsolutePath();
 		}
 
 		return null;
@@ -48,9 +62,9 @@ public class SdkEnvironment
 	 * @return String path
 	 */
 	public String locateJarsigner() {
-		def java_home = System.properties.get("java.home");
+		String java_home = System.getProperty("java.home");
 
-		def ext = isWindows() ? ".exe" : "";
+		String ext = isWindows() ? ".exe" : "";
 		String jarsigner = java_home + "/jarsigner" + ext;
 		if (new File(jarsigner).exists()) {
 			return jarsigner;

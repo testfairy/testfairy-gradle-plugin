@@ -29,13 +29,9 @@ class TestFairyPlugin implements Plugin<Project> {
 	/// path to aapt
 	private String zipPath
 
-	private boolean isWindows() {
-		return System.properties['os.name'].toLowerCase().contains('windows')
-	}
-
 	private void configureJavaTools(Project project) {
 
-		String sdkDirectory = getSdkDirectory()
+		String sdkDirectory = getSdkDirectory(project)
 		SdkEnvironment env = new SdkEnvironment(sdkDirectory)
 
 		jarSignerPath = env.locateJarsigner()
@@ -139,14 +135,7 @@ class TestFairyPlugin implements Plugin<Project> {
 								if (isMinifyEnabledCompat(variant.buildType) && extension.uploadProguardMapping) {
 									// proguard-mapping.txt upload is enabled
 
-									if (variant.metaClass.respondsTo(variant, "getMappingFile")) {
-										// getMappingFile was added in Android Plugin 0.13
-										proguardMappingFilename = variant.getMappingFile().toString()
-									} else {
-										// fallback to getProcessResources
-										proguardMappingFilename = new File(variant.getProcessResources().getProguardOutputFile().parent, 'mapping.txt').absolutePath.toString()
-									}
-
+									proguardMappingFilename = getMappingFileCompat(variant)
 									project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
 								}
 
@@ -164,7 +153,7 @@ class TestFairyPlugin implements Plugin<Project> {
 									project.logger.debug("Added api_key to download url, and is now ${instrumentedUrl}")
 
 									String baseName = FilenameUtils.getBaseName(apkFilename)
-									String tempFilename = FilenameUtils.normalize("${tempDir}/testfairy-${baseName}.apk".toString());
+									String tempFilename = FilenameUtils.normalize("${tempDir}/testfairy-${baseName}.apk".toString())
 									project.logger.debug("Downloading instrumented APK onto ${tempFilename}")
 									downloadFile(instrumentedUrl, tempFilename)
 
@@ -205,6 +194,9 @@ class TestFairyPlugin implements Plugin<Project> {
 	/**
 	 * Returns true if code minification is enabled for this build type.
 	 * Added to work around runProguard property being renamed to isMinifyEnabled in Android Gradle Plugin 0.14.0
+	 *
+	 * @param buildType
+	 * @return boolean
 	 */
 	private boolean isMinifyEnabledCompat(buildType) {
 		if (buildType.respondsTo("isMinifyEnabled")) {
@@ -212,6 +204,31 @@ class TestFairyPlugin implements Plugin<Project> {
 		} else {
 			return buildType.runProguard
 		}
+	}
+
+	private String getMappingFileCompat(variant) {
+
+		if (variant.metaClass.respondsTo(variant, "getMappingFile")) {
+			// getMappingFile was added in Android Plugin 0.13
+			return variant.getMappingFile().toString()
+		}
+
+		// fallback to getProcessResources
+		File f = new File(variant.processResources.proguardOutputFile.parent, 'mapping.txt')
+		if (f.exists()) {
+			// found as mapping.txt using getProguardOutputFile
+			return f.absolutePath.toString()
+		}
+
+		f = new File(variant.packageApplication.outputFile.parent)
+		f = new File(f.parent, "proguard/${variant.name}/mapping.txt")
+		if (f.exists()) {
+			// found through getPackageApplication
+			return f.absolutePath.toString()
+		}
+
+		// any other ways to find mapping file?
+		return null
 	}
 
 	/**
@@ -287,14 +304,14 @@ class TestFairyPlugin implements Plugin<Project> {
 				httpClient.getCredentialsProvider().setCredentials(authScope, credentials)
 			}
 
-			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy)
 		}
 
-		return httpClient;
+		return httpClient
 	}
 
 	private Object post(String url, MultipartEntity entity) {
-		DefaultHttpClient httpClient = new DefaultHttpClient()
+		DefaultHttpClient httpClient = buildHttpClient()
 		HttpPost post = new HttpPost(url)
 		post.addHeader("User-Agent", "TestFairy Gradle Plugin")
 		post.setEntity(entity)
@@ -317,14 +334,14 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param localFilename
 	 */
 	private void downloadFile(String url, String localFilename) {
-		DefaultHttpClient httpClient = new DefaultHttpClient()
+		DefaultHttpClient httpClient = buildHttpClient()
 		HttpGet httpget = new HttpGet(url)
 		HttpResponse response = httpClient.execute(httpget)
 		HttpEntity entity = response.getEntity()
 
-		FileOutputStream fis = new FileOutputStream(localFilename);
+		FileOutputStream fis = new FileOutputStream(localFilename)
 		IOUtils.copy(entity.getContent(), fis)
-		fis.close();
+		fis.close()
 	}
 
 	/**
@@ -427,7 +444,7 @@ class TestFairyPlugin implements Plugin<Project> {
 
 		if (extension.getRecordOnBackground()) {
 			// enable record on background option
-			entity.addPart('record-on-background', new StringBody("on"));
+			entity.addPart('record-on-background', new StringBody("on"))
 		}
 
 		return entity
@@ -482,7 +499,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param outFilename
 	 */
 	void zipAlignFile(String inFilename, String outFilename) {
-		def command = [zipAlignPath, "-f", "4", inFilename, outFilename];
+		def command = [zipAlignPath, "-f", "4", inFilename, outFilename]
 		def proc = command.execute()
 		proc.consumeProcessOutput()
 		proc.waitFor()
