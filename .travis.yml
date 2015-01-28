@@ -8,5 +8,5 @@ android:
     - build-tools-19.0.0
     - android-19
 
-script: bash gradlew packageRelease --info
+script: bash gradlew packageRelease uploadArchives
 
