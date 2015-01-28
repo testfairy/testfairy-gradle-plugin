@@ -1,0 +1,12 @@
+language: android
+jdk:
+  - oraclejdk7
+  - openjdk7
+  
+android:
+  components:
+    - build-tools-19.0.0
+    - android-19
+
+script: bash gradlew packageRelease --info
+
