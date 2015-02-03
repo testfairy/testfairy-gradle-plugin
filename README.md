@@ -3,6 +3,8 @@ TestFairy Gradle Plugin
 
 This plugin integrates TestFairy platform with the Gradle build system. With this plugin, you can upload signed builds directly via command line, IntelliJ, Android Studio and other IDEs.
 
+![Build Status](https://travis-ci.org/testfairy/testfairy-gradle-plugin.svg)
+
 Installation
 ---------
 
