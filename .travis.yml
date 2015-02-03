@@ -7,7 +7,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install php5 
   - curl -sS https://getcomposer.org/installer | php
-  - sudo mv composer.phar /usr/local/bin/phar
+  - sudo mv composer.phar /usr/bin/composer
 
 install:
   - composer install --no-interaction
