@@ -3,10 +3,15 @@ jdk:
   - oraclejdk7
   - openjdk7
   
+install:
+  - composer install --no-interaction
+
 android:
   components:
     - build-tools-19.0.0
     - android-19
 
-script: bash gradlew uploadArchives
+script:
+  - bash gradlew uploadArchives
+  - ./vendor/bin/phpunit
 
