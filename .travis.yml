@@ -3,9 +3,14 @@ jdk:
   - oraclejdk7
   - openjdk7
   
-install:
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install php5 
   - curl -sS https://getcomposer.org/installer | php
-  - php composer.phar install --no-interaction
+  - sudo mv composer.phar /usr/local/bin/phar
+
+install:
+  - composer install --no-interaction
 
 android:
   components:
