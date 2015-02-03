@@ -108,12 +108,12 @@
 			$this->fixupBuildGradle("$TEST_DIR/build.gradle", $useMinify);
 
 			// check plugin loaded successfully
-			exec("cd $TEST_DIR; sh gradlew tasks", $output);
+			exec("cd $TEST_DIR; bash gradlew tasks", $output);
 			$this->assertContains("testfairyRelease - Uploads the Release build to TestFairy", $output);
 			$this->assertContains("testfairyDebug - Uploads the Debug build to TestFairy", $output);
 
 			// try testfairyRelease task
-			exec("cd $TEST_DIR; sh gradlew testfairyRelease", $output);
+			exec("cd $TEST_DIR; bash gradlew testfairyRelease", $output);
 			$this->assertContains("Successfully uploaded to TestFairy, build is available at:", $output);
 
 			/*
