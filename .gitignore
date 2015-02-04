@@ -1,6 +1,3 @@
 .gradle
-.DS_Store
-repo
-build
-.idea
-*.iml
+vendor
+composer.lock

@@ -4,7 +4,8 @@ dependencies {
 	compile gradleApi()
 	compile localGroovy()
 	compile 'org.apache.httpcomponents:httpmime:4.2.5'
-	compile 'commons-io:commons-io:1.3.2'
+	compile 'commons-io:commons-io:2.4'
+	compile 'org.apache.commons:commons-compress:1.9'
 }
 
 apply plugin: 'maven'
@@ -18,6 +19,11 @@ repositories {
 
 configurations {
 	includeInJar
+}
+
+compileJava {
+	sourceCompatibility = 1.6
+	targetCompatibility = 1.6
 }
 
 uploadArchives {

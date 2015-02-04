@@ -14,6 +14,7 @@ import org.apache.http.util.EntityUtils
 import org.apache.http.conn.params.ConnRoutePNames
 import org.apache.commons.io.IOUtils
 import org.apache.commons.io.FilenameUtils
+import org.apache.commons.compress.archivers.zip.*
 import groovy.json.JsonSlurper
 
 class TestFairyPlugin implements Plugin<Project> {
@@ -25,9 +26,6 @@ class TestFairyPlugin implements Plugin<Project> {
 
 	/// path to zipalign
 	private String zipAlignPath
-
-	/// path to aapt
-	private String zipPath
 
 	private void configureJavaTools(Project project) {
 
@@ -43,31 +41,6 @@ class TestFairyPlugin implements Plugin<Project> {
 		if (zipAlignPath == null) {
 			throw new GradleException("Could not locate zipalign, please validate 'buildToolsVersion' settings")
 		}
-
-		zipPath = locateZip(project)
-	}
-
-	/**
-	 * Locates zip tool on disk.
-	 *
-	 * @param project
-	 * @return
-	 */
-	private String locateZip(Project project) {
-		try {
-			def command = ["zip", "-h"]
-			def proc = command.execute()
-			proc.consumeProcessOutput()
-			proc.waitFor()
-			if (proc.exitValue() == 0) {
-				project.logger.debug("zip was found in path")
-				return "zip"
-			}
-		} catch (IOException ignored) {
-			// zip not in path
-		}
-
-		throw new GradleException("Could not find 'zip' in path, please configure and run again")
 	}
 
 	private String getSdkDirectory(Project project) {
@@ -99,7 +72,6 @@ class TestFairyPlugin implements Plugin<Project> {
 		configureJavaTools(project)
 		project.logger.debug("Located zipalign at ${zipAlignPath}")
 		project.logger.debug("Located jarsigner at ${jarSignerPath}")
-		project.logger.debug("Located zip at ${zipPath}")
 
 		project.configure(project) {
 			if (it.hasProperty("android")) {
@@ -163,6 +135,8 @@ class TestFairyPlugin implements Plugin<Project> {
 									// upload the signed apk file back to testfairy
 									json = uploadSignedApk(extension, tempFilename)
 									(new File(tempFilename)).delete()
+
+									project.logger.debug("Signed instrumented file is available at: ${json.instrumented_url}")
 								}
 
 								println ""
@@ -250,24 +224,6 @@ class TestFairyPlugin implements Plugin<Project> {
 
 		zf.close()
 		return files
-	}
-
-	/**
-	 * Returns only the files under META-INF from APK.
-	 *
-	 * @param apkFilename
-	 * @return List<String>
-	 */
-	private List<String> getApkMetaFiles(String apkFilename) {
-		List<String> allFiles = getApkFiles(apkFilename)
-		List<String> metaFiles = new ArrayList<String>()
-		for (String filename: allFiles) {
-			if (filename.startsWith("META-INF/")) {
-				metaFiles.add(filename)
-			}
-		}
-
-		return metaFiles
 	}
 
 	/**
@@ -454,24 +410,58 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * Remove all signature files from archive, turning it back to unsigned.
 	 *
 	 * @param apkFilename
+	 * @param outputFilename
 	 */
-	void removeSignature(String apkFilename) {
-		def metaFilenames = getApkMetaFiles(apkFilename)
-		def command = ([zipPath, "-qd", apkFilename] << metaFilenames).flatten()
-		def proc = command.execute()
-		proc.consumeProcessOutput()
-		proc.waitFor()
+	void removeSignature(String apkFilename, String outFilename) {
+
+		ZipArchiveInputStream zais = new ZipArchiveInputStream(new FileInputStream(apkFilename))
+		ZipArchiveOutputStream zaos = new ZipArchiveOutputStream(new FileOutputStream(outFilename))
+		while (true) {
+			ZipArchiveEntry entry = zais.getNextZipEntry()
+			if (entry == null) {
+				break
+			}
+
+			if (entry.getName().startsWith("META-INF/")) {
+				// skip META-INF files
+				continue
+			}
+
+			ZipArchiveEntry zipEntry = new ZipArchiveEntry(entry.getName())
+			if (entry.getMethod() == ZipEntry.STORED) {
+				// when storing files, we need to copy the size and crc ourselves
+				zipEntry.setSize(entry.getSize())
+				zipEntry.setCrc(entry.getCrc())
+			}
+
+			zaos.setMethod(entry.getMethod())
+			zaos.putArchiveEntry(zipEntry)
+			IOUtils.copy(zais, zaos)
+			zaos.closeArchiveEntry()
+		}
+
+		zaos.close()
+		zais.close()
 	}
 
 	/**
-	 * Remove previous signature and sign archive again.
+	 * Remove previous signature and sign archive again. Works in-place, overwrites the original apk file.
 	 *
 	 * @param apkFilename
 	 * @param sc
 	 */
 	void resignApk(String apkFilename, sc) {
-		removeSignature(apkFilename)
-		signApkFile(apkFilename, sc)
+
+		// use a temporary file in the same directory as apkFilename
+		String outFilename = apkFilename + ".temp"
+
+		// remove signature onto temp file, sign and zipalign back onto original filename
+		removeSignature(apkFilename, outFilename)
+		signApkFile(outFilename, sc)
+		zipAlignFile(outFilename, apkFilename)
+		(new File(outFilename)).delete()
+
+		// make sure everything is still intact
 		validateApkSignature(apkFilename)
 	}
 
