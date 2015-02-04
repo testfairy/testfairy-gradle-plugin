@@ -14,6 +14,7 @@ import org.apache.http.util.EntityUtils
 import org.apache.http.conn.params.ConnRoutePNames
 import org.apache.commons.io.IOUtils
 import org.apache.commons.io.FilenameUtils
+import org.apache.commons.compress.archivers.zip.*
 import groovy.json.JsonSlurper
 
 class TestFairyPlugin implements Plugin<Project> {
@@ -129,13 +130,13 @@ class TestFairyPlugin implements Plugin<Project> {
 									downloadFile(instrumentedUrl, tempFilename)
 
 									// resign using gradle build settings
-									String resignedFilename = FilenameUtils.normalize("${tempDir}/testfairy-${baseName}-signed.apk".toString())
-									resignApk(tempFilename, resignedFilename, variant.signingConfig)
-									(new File(tempFilename)).delete()
+									resignApk(tempFilename, variant.signingConfig)
 
 									// upload the signed apk file back to testfairy
-									json = uploadSignedApk(extension, resignedFilename)
-									(new File(resignedFilename)).delete()
+									json = uploadSignedApk(extension, tempFilename)
+									(new File(tempFilename)).delete()
+
+									project.logger.debug("Signed instrumented file is available at: ${json.instrumented_url}")
 								}
 
 								println ""
@@ -416,17 +417,17 @@ class TestFairyPlugin implements Plugin<Project> {
 		ZipArchiveInputStream zais = new ZipArchiveInputStream(new FileInputStream(apkFilename))
 		ZipArchiveOutputStream zaos = new ZipArchiveOutputStream(new FileOutputStream(outFilename))
 		while (true) {
-			ZipArchiveEntry entry = zipArchive.getNextZipEntry()
+			ZipArchiveEntry entry = zais.getNextZipEntry()
 			if (entry == null) {
 				break
 			}
 
-			if (entry.getFilename().startsWith("META-INF/")) {
+			if (entry.getName().startsWith("META-INF/")) {
 				// skip META-INF files
 				continue
 			}
 
-			ZipArchiveEntry zipEntry = new ZipArchiveEntry(entry.getFilename())
+			ZipArchiveEntry zipEntry = new ZipArchiveEntry(entry.getName())
 			if (entry.getMethod() == ZipEntry.STORED) {
 				// when storing files, we need to copy the size and crc ourselves
 				zipEntry.setSize(entry.getSize())
@@ -435,25 +436,33 @@ class TestFairyPlugin implements Plugin<Project> {
 
 			zaos.setMethod(entry.getMethod())
 			zaos.putArchiveEntry(zipEntry)
-			IOUtils.copy(entry.getInputStream(), zaos)
-			zaos.closeArchiveEntry();
+			IOUtils.copy(zais, zaos)
+			zaos.closeArchiveEntry()
 		}
 
 		zaos.close()
-		zain.close()
+		zais.close()
 	}
 
 	/**
-	 * Remove previous signature and sign archive again.
+	 * Remove previous signature and sign archive again. Works in-place, overwrites the original apk file.
 	 *
 	 * @param apkFilename
-	 * @param outFilename
 	 * @param sc
 	 */
-	void resignApk(String apkFilename, String outFilename, sc) {
+	void resignApk(String apkFilename, sc) {
+
+		// use a temporary file in the same directory as apkFilename
+		String outFilename = apkFilename + ".temp"
+
+		// remove signature onto temp file, sign and zipalign back onto original filename
 		removeSignature(apkFilename, outFilename)
 		signApkFile(outFilename, sc)
-		validateApkSignature(outFilename)
+		zipAlignFile(outFilename, apkFilename)
+		(new File(outFilename)).delete()
+
+		// make sure everything is still intact
+		validateApkSignature(apkFilename)
 	}
 
 	/**
