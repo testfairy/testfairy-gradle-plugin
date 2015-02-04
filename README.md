@@ -112,6 +112,14 @@ This plugin is also Android Studio and Intellij-friendly. To upload builds direc
 
  ![Add new Gradle configuration screenshot][2]
 
+Changelog
+----
+
+1.12 (2015-02-04)
+  - Removed dependency for 'zip' command.
+  - Zipalign signed APK before uploading.
+  - Compatible with JDK 1.6.
+
 Bugs
 ----
 
