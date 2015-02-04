@@ -11,7 +11,7 @@ dependencies {
 apply plugin: 'maven'
 
 group = 'com.testfairy.plugins.gradle'
-version = '1.11'
+version = '1.12'
 
 repositories {
 	mavenCentral()
