@@ -9,6 +9,9 @@
 		public function setup() {
 			parent::setup();
 
+			// where is our development maven repository?
+			$this->_projectDir = realpath(__DIR__ . "/../../../..");
+
 			$name = $this->getName();
 			$prefix = "testGradleWrapper_";
 			if (substr($name, 0, strlen($prefix)) == $prefix) {
@@ -67,8 +70,8 @@
 				$out[] = $line;
 
 				if (strpos($line, "repositories {") !== FALSE) {
-					$out[] = "        maven { url 'https://www.testfairy.com/maven' }";
-					//$out[] = "        maven { url 'file://Users/gilm/git/testfairy-gradle-plugin/repo' }";
+					//$out[] = "        maven { url 'https://www.testfairy.com/maven' }";
+					$out[] = "        maven { url 'file://" . $this->_projectDir . "/repo' }";
 				}
 
 				if (strpos($line, "dependencies {") !== FALSE) {
@@ -117,7 +120,7 @@
 
 		private function assertZipaligned($filename) {
 			$home = $this->getAndroidHome();
-			exec("${home}/build-tools/19.1.0/zipalign -c 4 ${TEST_DIR}/signed.apk", $output, $retval);
+			exec("${home}/build-tools/19.1.0/zipalign -c 4 '$filename'", $output, $retval);
 			$this->assertEquals(0, $retval, "APK file was not zipaligned");
 		}
 
