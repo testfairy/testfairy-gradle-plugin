@@ -227,8 +227,6 @@
                 public function testGradleWrapper_2_1_AndroidPlugin_0_14_2() { }
                 public function testGradleWrapper_2_1_AndroidPlugin_0_14_3() { }
                 public function testGradleWrapper_2_1_AndroidPlugin_0_14_4() { }
-                public function testGradleWrapper_2_1_AndroidPlugin_1_0_0() { }
-                public function testGradleWrapper_2_1_AndroidPlugin_1_0_1() { }
 
                 // Gradle Wrapper 2.2
                 public function testGradleWrapper_2_2_AndroidPlugin_0_14_0() { }
