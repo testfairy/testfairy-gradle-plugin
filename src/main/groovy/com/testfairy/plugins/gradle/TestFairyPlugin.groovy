@@ -319,6 +319,11 @@ class TestFairyPlugin implements Plugin<Project> {
 			entity.addPart('changelog', new StringBody(changelog))
 		}
 
+		if(project.hasProperty("testfairyUploadedBy")){
+			String uploadedBy = project.property("testfairyUploadedBy")
+			entity.addPart('uploaded_by', new StringBody(uploadedBy))
+		}
+
 		return post(url, entity)
 	}
 
