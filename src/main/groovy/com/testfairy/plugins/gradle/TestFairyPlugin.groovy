@@ -266,10 +266,11 @@ class TestFairyPlugin implements Plugin<Project> {
 		return httpClient
 	}
 
-	private Object post(String url, MultipartEntity entity) {
+	private Object post(String url, MultipartEntity entity, String via) {
 		DefaultHttpClient httpClient = buildHttpClient()
 		HttpPost post = new HttpPost(url)
-		post.addHeader("User-Agent", "TestFairy Gradle Plugin")
+		String userAgent = "TestFairy Gradle Plugin" + via;
+		post.addHeader("User-Agent", userAgent)
 		post.setEntity(entity)
 		HttpResponse response = httpClient.execute(post)
 
@@ -312,6 +313,7 @@ class TestFairyPlugin implements Plugin<Project> {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
 		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
+		String via = ""
 
 		if (project.hasProperty("testfairyChangelog")) {
 			// optional: testfairyChangelog, as passed through -P
@@ -320,11 +322,10 @@ class TestFairyPlugin implements Plugin<Project> {
 		}
 
 		if(project.hasProperty("testfairyUploadedBy")){
-			String uploadedBy = project.property("testfairyUploadedBy")
-			entity.addPart('uploaded_by', new StringBody(uploadedBy))
+			via = " via " + project.property("testfairyUploadedBy")
 		}
 
-		return post(url, entity)
+		return post(url, entity, via)
 	}
 
 	/**
@@ -337,6 +338,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	private Object uploadSignedApk(TestFairyExtension extension, String apkFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload-signed"
+		String via = ""
 
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(extension.getApiKey()))
@@ -353,7 +355,12 @@ class TestFairyPlugin implements Plugin<Project> {
 		// add auto-update "on" or "off"
 		entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
 
-		return post(url, entity)
+
+		if(project.hasProperty("testfairyUploadedBy")){
+			via = " via " + project.property("testfairyUploadedBy")
+		}
+
+		return post(url, entity, via)
 	}
 
 	/**
