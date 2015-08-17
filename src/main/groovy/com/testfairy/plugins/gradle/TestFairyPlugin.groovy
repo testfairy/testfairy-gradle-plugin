@@ -133,7 +133,7 @@ class TestFairyPlugin implements Plugin<Project> {
 									resignApk(tempFilename, variant.signingConfig)
 
 									// upload the signed apk file back to testfairy
-									json = uploadSignedApk(extension, tempFilename)
+									json = uploadSignedApk(project, extension, tempFilename)
 									(new File(tempFilename)).delete()
 
 									project.logger.debug("Signed instrumented file is available at: ${json.instrumented_url}")
@@ -331,11 +331,12 @@ class TestFairyPlugin implements Plugin<Project> {
 	/**
 	 * Upload a signed APK using /api/upload-signed REST service.
 	 *
+	 * @param project
 	 * @param extension
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	private Object uploadSignedApk(TestFairyExtension extension, String apkFilename) {
+	private Object uploadSignedApk(Project project, TestFairyExtension extension, String apkFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload-signed"
 		String via = ""
