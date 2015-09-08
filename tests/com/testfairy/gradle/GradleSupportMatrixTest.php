@@ -132,6 +132,7 @@
 
 		private function tryGradle($wrapper, $plugin) {
 
+			print "\n"; // HACK to keep travis build alive
 			$android = $this->getAndroidHome() . "/tools/android";
 
 			// create an empty project first
