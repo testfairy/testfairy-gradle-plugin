@@ -133,7 +133,7 @@ class TestFairyPlugin implements Plugin<Project> {
 									resignApk(tempFilename, variant.signingConfig)
 
 									// upload the signed apk file back to testfairy
-									json = uploadSignedApk(extension, tempFilename)
+									json = uploadSignedApk(project, extension, tempFilename)
 									(new File(tempFilename)).delete()
 
 									project.logger.debug("Signed instrumented file is available at: ${json.instrumented_url}")
@@ -266,10 +266,11 @@ class TestFairyPlugin implements Plugin<Project> {
 		return httpClient
 	}
 
-	private Object post(String url, MultipartEntity entity) {
+	private Object post(String url, MultipartEntity entity, String via) {
 		DefaultHttpClient httpClient = buildHttpClient()
 		HttpPost post = new HttpPost(url)
-		post.addHeader("User-Agent", "TestFairy Gradle Plugin")
+		String userAgent = "TestFairy Gradle Plugin" + via;
+		post.addHeader("User-Agent", userAgent)
 		post.setEntity(entity)
 		HttpResponse response = httpClient.execute(post)
 
@@ -312,6 +313,7 @@ class TestFairyPlugin implements Plugin<Project> {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
 		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
+		String via = ""
 
 		if (project.hasProperty("testfairyChangelog")) {
 			// optional: testfairyChangelog, as passed through -P
@@ -319,19 +321,25 @@ class TestFairyPlugin implements Plugin<Project> {
 			entity.addPart('changelog', new StringBody(changelog))
 		}
 
-		return post(url, entity)
+		if(project.hasProperty("testfairyUploadedBy")){
+			via = " via " + project.property("testfairyUploadedBy")
+		}
+
+		return post(url, entity, via)
 	}
 
 	/**
 	 * Upload a signed APK using /api/upload-signed REST service.
 	 *
+	 * @param project
 	 * @param extension
 	 * @param apkFilename
 	 * @return Object parsed json
 	 */
-	private Object uploadSignedApk(TestFairyExtension extension, String apkFilename) {
+	private Object uploadSignedApk(Project project, TestFairyExtension extension, String apkFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload-signed"
+		String via = ""
 
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(extension.getApiKey()))
@@ -348,7 +356,12 @@ class TestFairyPlugin implements Plugin<Project> {
 		// add auto-update "on" or "off"
 		entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
 
-		return post(url, entity)
+
+		if(project.hasProperty("testfairyUploadedBy")){
+			via = " via " + project.property("testfairyUploadedBy")
+		}
+
+		return post(url, entity, via)
 	}
 
 	/**
