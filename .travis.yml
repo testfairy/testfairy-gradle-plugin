@@ -1,5 +1,7 @@
 language: android
 
+sudo: false
+
 branches:
   only:
     - master
