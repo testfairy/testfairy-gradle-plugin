@@ -130,7 +130,7 @@ class TestFairyPlugin implements Plugin<Project> {
 									downloadFile(instrumentedUrl, tempFilename)
 
 									// resign using gradle build settings
-									resignApk(tempFilename, variant.signingConfig)
+									resignApk(tempFilename, variant.signingConfig, extension)
 
 									// upload the signed apk file back to testfairy
 									json = uploadSignedApk(project, extension, tempFilename)
@@ -463,14 +463,14 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @param sc
 	 */
-	void resignApk(String apkFilename, sc) {
+	void resignApk(String apkFilename, sc, extension) {
 
 		// use a temporary file in the same directory as apkFilename
 		String outFilename = apkFilename + ".temp"
 
 		// remove signature onto temp file, sign and zipalign back onto original filename
 		removeSignature(apkFilename, outFilename)
-		signApkFile(outFilename, sc)
+		signApkFile(outFilename, sc, extension)
 		zipAlignFile(outFilename, apkFilename)
 		(new File(outFilename)).delete()
 
@@ -484,8 +484,8 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param apkFilename
 	 * @param sc
 	 */
-	void signApkFile(String apkFilename, sc) {
-		def command = [jarSignerPath, "-keystore", sc.storeFile, "-storepass", sc.storePassword, "-keypass", sc.keyPassword, "-digestalg", "SHA1", "-sigalg", "MD5withRSA", apkFilename, sc.keyAlias]
+	void signApkFile(String apkFilename, sc, extension) {
+		def command = [jarSignerPath, "-keystore", sc.storeFile, "-storepass", sc.storePassword, "-keypass", sc.keyPassword, "-digestalg", extension.getDigestAlg(), "-sigalg", extension.getSigAlg(), apkFilename, sc.keyAlias]
 		def proc = command.execute()
 		proc.consumeProcessOutput()
 		proc.waitFor()
