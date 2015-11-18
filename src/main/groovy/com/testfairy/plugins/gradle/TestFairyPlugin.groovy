@@ -312,7 +312,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
-		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
+		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename, project)
 		String via = ""
 
 		if (project.hasProperty("testfairyChangelog")) {
@@ -370,7 +370,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param extension
 	 * @return MultipartEntity
 	 */
-	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
+	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename, Project project) {
 		String apiKey = extension.getApiKey()
 
 		MultipartEntity entity = new MultipartEntity()
@@ -414,6 +414,20 @@ class TestFairyPlugin implements Plugin<Project> {
 		if (extension.getRecordOnBackground()) {
 			// enable record on background option
 			entity.addPart('record-on-background', new StringBody("on"))
+		}
+
+		if (extension.getComment()) {
+			// use available build comment
+			entity.addPart('comment', new StringBody(extension.getComment()))
+		} else if (extension.getCommentFilePath()) {
+			// read build comment from file
+			File file = project.rootProject.file(extension.getCommentFilePath())
+			if (file.exists()) {
+				String comment = file.getText('UTF-8')
+				if (comment) {
+					entity.addPart('comment', new StringBody(comment))
+				}
+			}
 		}
 
 		return entity
