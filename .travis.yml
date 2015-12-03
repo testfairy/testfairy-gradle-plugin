@@ -20,7 +20,7 @@ before_install:
 install:
 - composer install --no-interaction
 script:
-- ./gradlew build
+- ./gradlew uploadArchives -PisRelease=false -Prevision="1.0.0-SNAPSHOT" -PsonatypeUsername="${SONATYPE_USERNAME}" -PsonatypePassword="${SONATYPE_PASSWORD}" --info
 - ./vendor/bin/phpunit
 deploy:
   provider: script

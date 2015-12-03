@@ -71,11 +71,11 @@
 
 				if (strpos($line, "repositories {") !== FALSE) {
 					// $out[] = "        maven { url 'file://" . $this->_projectDir . "/repo' }";
-                    $out[] = "        mavenCentral()";
+                    $out[] = "        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }";
 				}
 
 				if (strpos($line, "dependencies {") !== FALSE) {
-					$out[] = "        classpath 'com.testfairy:testfairy-gradle-plugin:2.0.8-SNAPSHOT'";
+					$out[] = "        classpath 'com.testfairy:testfairy-gradle-plugin:1.0.0-SNAPSHOT'";
 				}
 
 				if (strpos($line, "apply plugin") !== FALSE) {
