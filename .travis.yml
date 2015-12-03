@@ -1,30 +1,32 @@
 language: android
-
-branches:
-  only:
-    - master
-    
+env:
+  global:
+  - secure: K9gbqAQ93hUMqL/njHGTZwyLAL17036WuFFZAxiEKba4Fh+tTAwyvyhii/XxfNoopne5uO+SMEGcBKz05u3TVB7mFtfTCdOghx9e/FM9hJx/rL3XBajDH4OH/qpzRDDVc2ci4Lu7mhe68spynPw59/CyT7Aoty2wXjcNJ0wyBE0=
+  - secure: Rb4txJS5LaKdckS2Gdg24+3t2TEB02LhbjBKSRkQbVbNY0mLgGo4t3m4DvLC8QHhEJz+78P1rUSxUA8RDTF0j/tviqJaBH0YgHthCCaRruK5cABiSlivDHOUZLkEimkClEpLp7I0TKOb+ZMnIW5BLXIXJ6UWHPRo/G3NrvyIvJM=
 jdk:
-  - oraclejdk7
-  - openjdk7
-  
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install php5 
-  - curl -sS https://getcomposer.org/installer | php
-  - sudo mv composer.phar /usr/bin/composer
-
-install:
-  - composer install --no-interaction
-
+- oraclejdk7
+- openjdk7
 android:
   components:
-    - build-tools-19.0.0
-    - build-tools-19.1.0
-    - android-8
-    - android-19
-
+  - build-tools-19.0.0
+  - build-tools-19.1.0
+  - android-8
+  - android-19
+before_install:
+- sudo apt-get update
+- sudo apt-get install php5
+- curl -sS https://getcomposer.org/installer | php
+- sudo mv composer.phar /usr/bin/composer
+install:
+- composer install --no-interaction
 script:
-  - bash gradlew uploadArchives
-  - ./vendor/bin/phpunit
-
+- ./gradlew build
+- ./vendor/bin/phpunit
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: ./gradlew uploadArchives -PisRelease=true -Prevision=${TRAVIS_TAG} -PsonatypeUsername="${SONATYPE_USERNAME}" -PsonatypePassword="${SONATYPE_PASSWORD}" -Psigning.keyId="${GPG_CLIENT_ID}" -Psigning.password="${GPG_PASSWORD}" -Psigning.secretKeyRingFile="/home/travis/build/testfairy/testfairy-gradle-plugin/secring.gpg" --info
+  on:
+    tags: true
+    repo: testfairy/testfairy-gradle-plugin
+    branch: master

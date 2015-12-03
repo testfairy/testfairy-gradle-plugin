@@ -14,6 +14,10 @@ public class SdkEnvironment
 {
 	private String sdkDirectory;
 
+	public SdkEnvironment() {
+		this(System.getenv("ANDROID_HOME"));
+	}
+
 	public SdkEnvironment(String sdkDirectory) {
 		this.sdkDirectory = sdkDirectory;
 	}

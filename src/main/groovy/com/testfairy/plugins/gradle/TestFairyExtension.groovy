@@ -3,7 +3,6 @@ package com.testfairy.plugins.gradle
 import org.gradle.api.*
 
 class TestFairyExtension {
-
 	private String apiKey
 	private Boolean iconWatermark = false
 	private String video = "on"
@@ -13,6 +12,8 @@ class TestFairyExtension {
 	private String maxDuration
 	private String metrics
 	private String comment
+	private String digestalg = "SHA1"
+	private String sigalg = "MD5withRSA"
 	private Boolean notify = true
 	private Boolean autoUpdate = false
 	private Boolean recordOnBackground = false
@@ -134,5 +135,21 @@ class TestFairyExtension {
     Boolean getUploadProguardMapping(){
         return uploadProguardMapping;
     }
+
+	void digestalg(String value) {
+		digestalg = value;
+	}
+
+	String getDigestalg() {
+		return digestalg
+	}
+
+	void sigalg(String value) {
+		sigalg = value
+	}
+
+	String getSigalg() {
+		return sigalg
+	}
 }
 
