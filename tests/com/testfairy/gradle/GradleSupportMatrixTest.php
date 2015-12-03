@@ -71,7 +71,9 @@
 
 				if (strpos($line, "repositories {") !== FALSE) {
 					// $out[] = "        maven { url 'file://" . $this->_projectDir . "/repo' }";
-                    $out[] = "        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }";
+                    $out[] = "        maven {";
+                    $out[] = "            jcenter()"
+                    $out[] = "            url 'https://oss.sonatype.org/content/repositories/snapshots/' }";
 				}
 
 				if (strpos($line, "dependencies {") !== FALSE) {
