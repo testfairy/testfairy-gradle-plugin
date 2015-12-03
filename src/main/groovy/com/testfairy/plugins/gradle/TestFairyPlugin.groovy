@@ -71,7 +71,7 @@ class TestFairyPlugin implements Plugin<Project> {
 								ApkVariant apkVariant = variant
 								String  apkFilename = task.outputFile.toString()
 								String apiKey = project.hasProperty("testfairyApiKey") ?
-										project.property("testfairyApiKey") : extension.getApiKey()
+									project.property("testfairyApiKey") : extension.getApiKey()
 
 								project.logger.info("Instrumenting ${apkFilename} using apiKey ${apiKey}}")
 
@@ -86,6 +86,7 @@ class TestFairyPlugin implements Plugin<Project> {
 
 								AndroidUploader uploader = android.build();
 								project.logger.debug(uploader.toString())
+								project.logger.info(uploader.toString())
 								uploader.upload(new Listener() {
 									@Override
 									void onUploadStarted() {
@@ -170,7 +171,10 @@ class TestFairyPlugin implements Plugin<Project> {
 	}
 
 	private static void applyProguard(AndroidUploader.Builder android, TestFairyExtension extension, ApkVariant variant, Project project) {
-		if (isMinifyEnabledCompat(variant.buildType) && extension.uploadProguardMapping) {
+		Boolean uploadProguardMapping = project.hasProperty("testfairyUploadProguardMapping") ?
+			"true".equals(project.property("testfairyUploadProguardMapping")) :
+			extension.uploadProguardMapping;
+		if (isMinifyEnabledCompat(variant.buildType) && uploadProguardMapping) {
 			String proguardFile = getMappingFileCompat(variant)
 			project.logger.debug("Using proguard mapping file at ${proguardFile}")
 			android.setProguardMapPath(proguardFile)
@@ -245,6 +249,20 @@ class TestFairyPlugin implements Plugin<Project> {
 			options.setAutoUpdate(autoUpdate)
 		}
 
+		Boolean anonymous = project.hasProperty("testfairyAnonymous") ?
+				"true".equals(project.property("testfairyAnonymous")) :
+				extension.anonymous();
+		if (anonymous != null) {
+			options.setAnonymous(anonymous)
+		}
+
+		Boolean shake = project.hasProperty("testfairyShake") ?
+				"true".equals(project.property("testfairyShake")) :
+				extension.anonymous();
+		if (anonymous != null) {
+			options.shakeForBugReports(shake)
+		}
+
 		Boolean recordInBackground = project.hasProperty("testfairyRecordOnBackground") ?
 			"true".equals(project.property("testfairyRecordOnBackground")) :
 			extension.getRecordOnBackground()
@@ -260,10 +278,16 @@ class TestFairyPlugin implements Plugin<Project> {
 			}
 		}
 
-		String comment = project.hasProperty("testfairyChangelog")?
-			project.property("testfairyChangelog") : extension.getComment()
+		String comment = project.hasProperty("testfairyComment")?
+			project.property("testfairyComment") : extension.getComment()
 		if (comment != null) {
-			options.setChangelog(comment)
+			options.setComment(comment)
+		}
+
+		String changelog = project.hasProperty("testfairyChangelog")?
+				project.property("testfairyChangelog") : extension.getChangelog()
+		if (comment != null) {
+			options.setChangelog(changelog)
 		}
 
 		android.setOptions(options.build())

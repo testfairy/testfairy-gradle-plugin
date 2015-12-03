@@ -1,6 +1,6 @@
 package com.testfairy.plugins.gradle
 
-import org.gradle.api.*
+import org.gradle.api.Project
 
 class TestFairyExtension {
 	private String apiKey
@@ -12,9 +12,12 @@ class TestFairyExtension {
 	private String maxDuration
 	private String metrics
 	private String comment
+	private String changelog
 	private String digestalg = "SHA1"
 	private String sigalg = "MD5withRSA"
 	private Boolean notify = true
+	private Boolean anonymous = false
+	private Boolean shake = false
 	private Boolean autoUpdate = false
 	private Boolean recordOnBackground = false
 	private Boolean uploadProguardMapping = false
@@ -96,6 +99,14 @@ class TestFairyExtension {
 		return comment
 	}
 
+	void changelog(String value) {
+		this.changelog = value
+	}
+
+	String getChangelog() {
+		return changelog
+	}
+
 	void serverEndpoint(String value) {
 		this.serverEndpoint = value
 	}
@@ -110,6 +121,22 @@ class TestFairyExtension {
 
 	Boolean getNotify() {
 		return notify
+	}
+
+	void shake(Boolean value) {
+		this.shake = value;
+	}
+
+	Boolean getShake() {
+		return this.shake
+	}
+
+	void anonymous(Boolean value) {
+		this.anonymous = value
+	}
+
+	Boolean anonymous() {
+		return this.anonymous;
 	}
 
 	void autoUpdate(Boolean value) {
