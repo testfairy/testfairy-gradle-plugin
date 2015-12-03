@@ -13,6 +13,7 @@ android:
   - android-8
   - android-19
 before_install:
+- openssl aes-256-cbc -K $encrypted_86872c555467_key -iv $encrypted_86872c555467_iv -in secring.gpg.enc -out secring.gpg -d
 - sudo apt-get update
 - sudo apt-get install php5
 - curl -sS https://getcomposer.org/installer | php
@@ -20,14 +21,17 @@ before_install:
 install:
 - composer install --no-interaction
 script:
-- ./gradlew uploadArchives -PisRelease=false -Prevision="1.0.0-SNAPSHOT" -PsonatypeUsername="${SONATYPE_USERNAME}" -PsonatypePassword="${SONATYPE_PASSWORD}" --info
+- ./gradlew uploadArchives -PisRelease=false -Prevision="1.0.0-SNAPSHOT" -PsonatypeUsername="${SONATYPE_USERNAME}"
+  -PsonatypePassword="${SONATYPE_PASSWORD}" --info
 - ./vendor/bin/phpunit
 deploy:
   provider: script
   skip_cleanup: true
-  script: ./gradlew uploadArchives -PisRelease=true -Prevision=${TRAVIS_TAG} -PsonatypeUsername="${SONATYPE_USERNAME}" -PsonatypePassword="${SONATYPE_PASSWORD}" -Psigning.keyId="${GPG_CLIENT_ID}" -Psigning.password="${GPG_PASSWORD}" -Psigning.secretKeyRingFile="/home/travis/build/testfairy/testfairy-gradle-plugin/secring.gpg" --info
+  script: ./gradlew uploadArchives -PisRelease=true -Prevision=${TRAVIS_TAG} -PsonatypeUsername="${SONATYPE_USERNAME}"
+    -PsonatypePassword="${SONATYPE_PASSWORD}" -Psigning.keyId="${GPG_CLIENT_ID}" -Psigning.password="${GPG_PASSWORD}"
+    -Psigning.secretKeyRingFile="/home/travis/build/testfairy/testfairy-gradle-plugin/secring.gpg"
+    --info
   on:
     tags: true
     repo: testfairy/testfairy-gradle-plugin
     branch: master
-
