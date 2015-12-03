@@ -70,12 +70,12 @@
 				$out[] = $line;
 
 				if (strpos($line, "repositories {") !== FALSE) {
-					//$out[] = "        maven { url 'https://www.testfairy.com/maven' }";
-					$out[] = "        maven { url 'file://" . $this->_projectDir . "/repo' }";
+					// $out[] = "        maven { url 'file://" . $this->_projectDir . "/repo' }";
+                    $out[] = "        mavenCentral()";
 				}
 
 				if (strpos($line, "dependencies {") !== FALSE) {
-					$out[] = "        classpath 'com.testfairy.plugins.gradle:testfairy:1.+'";
+					$out[] = "        classpath 'com.testfairy:testfairy-gradle-plugin:2.0.8-SNAPSHOT'";
 				}
 
 				if (strpos($line, "apply plugin") !== FALSE) {

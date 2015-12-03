@@ -30,3 +30,4 @@ deploy:
     tags: true
     repo: testfairy/testfairy-gradle-plugin
     branch: master
+
