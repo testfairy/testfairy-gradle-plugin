@@ -78,7 +78,7 @@ android {
         iconWatermark true
         metrics "cpu,memory,network,logcat"
         video "wifi"
-        videoRate "0.5"
+        videoRate "1.5"
         videoQuality "low"
         maxDuration "15m"
         recordOnBackground true
@@ -91,8 +91,9 @@ android {
 ```
 
 ```
-> ./gradle testfairyDebug -PtestfairyApiKey=api_key -PtestfairyWatermark=true -PtestfairyMetrics=cpu,memory,network,logcat -PtestfairyVideo=wifi -PtestfairyVideoRate=0.5 -PtestfairyMaxDuration=15m -PtestfairyRecordOnBackground=true -PtestfairyTesterGroups=dev,qa,friends -PtestfairyNotify=true -PtestfairyAutoUpdate=true -PtestfairyUploadProguardMapping=true
+> ./gradle testfairyDebug -PtestfairyApiKey=api_key -PtestfairyWatermark=true -PtestfairyMetrics=cpu,memory,network,logcat -PtestfairyVideo=wifi -PtestfairyVideoQuality=low -PtestfairyVideoRate=1.5 -PtestfairyMaxDuration=15m -PtestfairyRecordOnBackground=true -PtestfairyTesterGroups=dev,qa,friends -PtestfairyNotify=true -PtestfairyAutoUpdate=true -PtestfairyUploadProguardMapping=true
 ```
+
 This allows you define variables at the command line or in a `gradle.properties` file. Arguments at the command line preceed the values in `testfairyConfig`. Arguments such as testfairyApiKey can even accept environment variables securely from build systems.
 
 For more details about parameter values, see [this](http://docs.testfairy.com/Upload_API.html).
