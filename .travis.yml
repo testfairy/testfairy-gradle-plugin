@@ -8,10 +8,9 @@ jdk:
 - openjdk7
 android:
   components:
-  - build-tools-19.0.0
-  - build-tools-19.1.0
+  - build-tools-23.0.2
   - android-8
-  - android-19
+  - android-23
 before_install:
 - openssl aes-256-cbc -K $encrypted_86872c555467_key -iv $encrypted_86872c555467_iv -in secring.gpg.enc -out secring.gpg -d
 - sudo apt-get update
