@@ -4,6 +4,7 @@ dependencies {
 	compile gradleApi()
 	compile localGroovy()
 	compile 'com.testfairy:testfairy-uploader:1.1.1'
+	compile 'org.codehaus.groovy:groovy-backports-compat23:2.4.5'
 }
 
 apply plugin: 'maven'

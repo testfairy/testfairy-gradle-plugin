@@ -84,13 +84,13 @@
 
 				if (strpos($line, "android {") !== FALSE) {
 					$out[] = "signingConfigs {";
-        				$out[] = "  release {";
-                                        $out[] = "    storeFile file(\"$keystore\")";
-                                        $out[] = "    storePassword \"swordfish\"";
-                                        $out[] = "    keyAlias \"android_app\"";
-                                        $out[] = "    keyPassword \"swordfish\"";
-                                        $out[] = "  }";
-                                        $out[] = "}";
+    				$out[] = "  release {";
+					$out[] = "    storeFile file(\"$keystore\")";
+					$out[] = "    storePassword \"swordfish\"";
+					$out[] = "    keyAlias \"android_app\"";
+					$out[] = "    keyPassword \"swordfish\"";
+					$out[] = "  }";
+					$out[] = "}";
 
 					$out[] = "buildTypes {";
 					$out[] = "  release {";
