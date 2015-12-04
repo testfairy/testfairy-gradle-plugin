@@ -1,8 +1,5 @@
 package com.testfairy.plugins.gradle
 
-import com.android.build.gradle.api.ApkVariant
-import com.android.builder.model.SigningConfig
-import com.android.builder.model.Variant
 import com.testfairy.uploader.*
 
 import org.gradle.api.*
@@ -65,10 +62,9 @@ class TestFairyPlugin implements Plugin<Project> {
 						def expectingTask = "package${variant.name.capitalize()}".toString()
 						if (expectingTask.equals(task.name)) {
 							// create new task with name such as testfairyRelease and testfairyDebug
-							def newTaskName = "testfairy${variantName.capitalize()}"
 							def variantName = variant.name
+							def newTaskName = "testfairy${variantName.capitalize()}"
 							project.task(newTaskName) << {
-								ApkVariant apkVariant = variant
 								String  apkFilename = task.outputFile.toString()
 								String apiKey = project.hasProperty("testfairyApiKey") ?
 									project.property("testfairyApiKey") : extension.getApiKey()
@@ -79,8 +75,8 @@ class TestFairyPlugin implements Plugin<Project> {
 								applyProperties(android, jarSignerPath, project);
 								applyOptions(android, extension, project)
 								applyMetrics(android, extension, project)
-								applyProguard(android, extension, apkVariant, project)
-								applySigning(android, extension, apkVariant, project, apkFilename)
+								applyProguard(android, extension, variant, project)
+								applySigning(android, extension, variant, project, apkFilename)
 								applyProxy(android);
 								android.setApkPath(task.outputFile.toString());
 
@@ -147,12 +143,12 @@ class TestFairyPlugin implements Plugin<Project> {
 		android.setProxyCredentials(proxyUser, proxyPassword)
 	}
 
-	private static void applySigning(AndroidUploader.Builder android, TestFairyExtension extension, ApkVariant variant, Project project, String apkFilename) {
+	private static void applySigning(AndroidUploader.Builder android, TestFairyExtension extension, variant, Project project, String apkFilename) {
 		boolean enableInstrumentation = variant.isSigningReady() && isApkSigned(apkFilename)
 		android.enableInstrumentation(enableInstrumentation);
 
 		if (enableInstrumentation) {
-			SigningConfig signingConfig = variant.signingConfig;
+			def signingConfig = variant.signingConfig;
 			android.setKeystore(
 				signingConfig.storeFile.getAbsolutePath(),
 				signingConfig.keyAlias,
@@ -170,7 +166,7 @@ class TestFairyPlugin implements Plugin<Project> {
 		}
 	}
 
-	private static void applyProguard(AndroidUploader.Builder android, TestFairyExtension extension, ApkVariant variant, Project project) {
+	private static void applyProguard(AndroidUploader.Builder android, TestFairyExtension extension, variant, Project project) {
 		Boolean uploadProguardMapping = project.hasProperty("testfairyUploadProguardMapping") ?
 			"true".equals(project.property("testfairyUploadProguardMapping")) :
 			extension.uploadProguardMapping;

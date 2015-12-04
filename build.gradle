@@ -4,7 +4,6 @@ dependencies {
 	compile gradleApi()
 	compile localGroovy()
 	compile 'com.testfairy:testfairy-uploader:1.1.1'
-	compile 'com.android.tools.build:gradle:0.8.0'
 }
 
 apply plugin: 'maven'
@@ -15,11 +14,10 @@ version = (project.hasProperty('revision') ? project.property('revision') : '2.0
 
 repositories {
 	mavenCentral()
-	jcenter()
 }
 
 configurations {
-	includeInJa
+	includeInJar
 }
 
 compileJava {

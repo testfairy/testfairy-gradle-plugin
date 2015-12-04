@@ -71,7 +71,7 @@
 
 				if (strpos($line, "repositories {") !== FALSE) {
 					// $out[] = "        maven { url 'file://" . $this->_projectDir . "/repo' }";
-                    $out[] = "        jcenter()\nmaven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }";
+                    $out[] = "        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }";
 				}
 
 				if (strpos($line, "dependencies {") !== FALSE) {
@@ -120,7 +120,7 @@
 
 		private function assertZipaligned($filename) {
 			$home = $this->getAndroidHome();
-			exec("${home}/build-tools/19.1.0/zipalign -c 4 '$filename'", $output, $retval);
+			exec("${home}/build-tools/23.0.2/zipalign -c 4 '$filename'", $output, $retval);
 			$this->assertEquals(0, $retval, "APK file was not zipaligned");
 		}
 
