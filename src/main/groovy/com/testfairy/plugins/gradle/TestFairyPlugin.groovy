@@ -91,6 +91,7 @@ class TestFairyPlugin implements Plugin<Project> {
 
 									@Override
 									void onUploadComplete(Build build) {
+										project.logger.debug("Signed instrumented file is available at: ${build.instrumentedUrl()}")
 										println "Successfully uploaded to TestFairy, build is available at:"
 										println build.buildUrl()
 									}
