@@ -3,15 +3,15 @@ apply plugin: 'groovy'
 dependencies {
 	compile gradleApi()
 	compile localGroovy()
-	compile 'org.apache.httpcomponents:httpmime:4.2.5'
-	compile 'commons-io:commons-io:2.4'
-	compile 'org.apache.commons:commons-compress:1.9'
+	compile 'com.testfairy:testfairy-uploader:1.1.1'
+	compile 'org.codehaus.groovy:groovy-backports-compat23:2.4.5'
 }
 
 apply plugin: 'maven'
+apply plugin: 'signing'
 
-group = 'com.testfairy.plugins.gradle'
-version = '1.13'
+group = 'com.testfairy'
+version = (project.hasProperty('revision') ? project.property('revision') : '2.0.0')
 
 repositories {
 	mavenCentral()
@@ -26,14 +26,45 @@ compileJava {
 	targetCompatibility = 1.6
 }
 
+signing {
+	required{ isRelease() }
+	sign configurations.archives
+}
+
+def getRepositoryUsername() {
+	return hasProperty('sonatypeUsername') ? sonatypeUsername : System.getenv("SONATYPE_USERNAME")
+}
+
+def getRepositoryPassword() {
+	return hasProperty('sonatypePassword') ? sonatypePassword : System.getenv("SONATYPE_PASSWORD")
+}
+
+def isRelease() {
+	return hasProperty('isRelease') ? isRelease == 'true' : false;
+}
+
 uploadArchives {
 	repositories {
 		mavenDeployer {
-			repository(url: uri('repo'))
+			beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+			pom.groupId = project.group
+			pom.artifactId = 'testfairy-gradle-plugin'
+			pom.version = project.version
+			println pom.version
+
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+			}
+
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+			}
 
 			pom.project {
 				name 'TestFairy Uploader Plugin for Gradle'
 				description 'Upload signed builds directly to TestFairy platform.'
+				artifactId 'testfairy-gradle-plugin'
 				url 'https://www.testfairy.com'
 				inceptionYear '2013'
 
@@ -43,11 +74,12 @@ uploadArchives {
 						url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
 						distribution 'repo'
 					}
-                		}
+				}
 
 				scm {
-					url "https://github.com/testfairy/testfairy-gradle-plugin.git"
-					connection "git://github.com/testfairy/testfairy-gradle-plugin.git"
+					url "https://github.com/testfairy/testfairy-gradle-plugin"
+					connection 'scm:git:https://github.com/testfairy/testfairy-gradle-plugin/'
+					developerConnection 'scm:git:https://github.com/testfairy/testfairy-gradle-plugin/'
 				}
 
 				developers {

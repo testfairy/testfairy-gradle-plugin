@@ -1,3 +1,6 @@
 .gradle
 vendor
 composer.lock
+.idea
+*.iml
+build

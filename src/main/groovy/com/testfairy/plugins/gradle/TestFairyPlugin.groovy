@@ -13,22 +13,13 @@ import org.apache.http.entity.mime.content.*
 import org.apache.http.util.EntityUtils
 import org.apache.http.conn.params.ConnRoutePNames
 import org.apache.commons.io.IOUtils
-import org.apache.commons.io.FilenameUtils
 import org.apache.commons.compress.archivers.zip.*
 import groovy.json.JsonSlurper
 
 class TestFairyPlugin implements Plugin<Project> {
-
-	private String apiKey
-
-	/// path to Java's jarsigner
 	private String jarSignerPath
 
-	/// path to zipalign
-	private String zipAlignPath
-
 	private void configureJavaTools(Project project) {
-
 		String sdkDirectory = getSdkDirectory(project)
 		SdkEnvironment env = new SdkEnvironment(sdkDirectory)
 
@@ -36,14 +27,9 @@ class TestFairyPlugin implements Plugin<Project> {
 		if (jarSignerPath == null) {
 			throw new GradleException("Could not locate jarsigner, please update java.home property")
 		}
-
-		zipAlignPath = env.locateZipalign()
-		if (zipAlignPath == null) {
-			throw new GradleException("Could not locate zipalign, please validate 'buildToolsVersion' settings")
-		}
 	}
 
-	private String getSdkDirectory(Project project) {
+	private static String getSdkDirectory(Project project) {
 		def sdkDir
 
 		Properties properties = new Properties()
@@ -64,84 +50,62 @@ class TestFairyPlugin implements Plugin<Project> {
 
 	@Override
 	void apply(Project project) {
-
 		// create an extension where the apiKey and such settings reside
-		def extension = project.extensions.create("testfairyConfig", TestFairyExtension, project)
-
-		// configure java tools before even starting
+		TestFairyExtension extension = project.extensions.create("testfairyConfig", TestFairyExtension, project)
 		configureJavaTools(project)
-		project.logger.debug("Located zipalign at ${zipAlignPath}")
-		project.logger.debug("Located jarsigner at ${jarSignerPath}")
 
 		project.configure(project) {
 			if (it.hasProperty("android")) {
-
 				tasks.whenTaskAdded { task ->
-
 					project.("android").applicationVariants.all { variant ->
-
 						// locate packageRelease and packageDebug tasks
 						def expectingTask = "package${variant.name.capitalize()}".toString()
 						if (expectingTask.equals(task.name)) {
-
-							def variantName = variant.name
-
 							// create new task with name such as testfairyRelease and testfairyDebug
+							def variantName = variant.name
 							def newTaskName = "testfairy${variantName.capitalize()}"
-
 							project.task(newTaskName) << {
+								String  apkFilename = task.outputFile.toString()
+								String apiKey = project.hasProperty("testfairyApiKey") ?
+									project.property("testfairyApiKey") : extension.getApiKey()
 
-								assertValidApiKey(extension)
+								project.logger.info("Instrumenting ${apkFilename} using apiKey ${apiKey}}")
 
-								String apiKey = extension.getApiKey()
-								String serverEndpoint = extension.getServerEndpoint()
+								AndroidUploader.Builder android = new AndroidUploader.Builder(apiKey)
+								applyProperties(android, jarSignerPath, project);
+								applyOptions(android, extension, project)
+								applyMetrics(android, extension, project)
+								applyProguard(android, extension, variant, project)
+								applySigning(android, extension, variant, project, apkFilename)
+								applyProxy(android);
+								android.setApkPath(task.outputFile.toString());
 
-								// use outputFile from packageApp task
-								String apkFilename = task.outputFile.toString()
-								project.logger.info("Instrumenting ${apkFilename} using apiKey ${apiKey} and server ${serverEndpoint}")
+								AndroidUploader uploader = android.build();
+								project.logger.debug(uploader.toString())
+								project.logger.info(uploader.toString())
+								uploader.upload(new Listener() {
+									@Override
+									void onUploadStarted() {
+										println "Starting upload"
+									}
 
-								def tempDir = task.temporaryDir.getAbsolutePath()
-								project.logger.debug("Saving temporary files to ${tempDir}")
+									@Override
+									void onUploadComplete(Build build) {
+										project.logger.debug("Signed instrumented file is available at: ${build.instrumentedUrl()}")
+										println "Successfully uploaded to TestFairy, build is available at:"
+										println build.buildUrl()
+									}
 
-								String proguardMappingFilename = null
-								if (isMinifyEnabledCompat(variant.buildType) && extension.uploadProguardMapping) {
-									// proguard-mapping.txt upload is enabled
+									@Override
+									void onUploadFailed(Throwable throwable) {
+										println "Failed to upload to TestFairy: " + throwable.getMessage()
+									}
 
-									proguardMappingFilename = getMappingFileCompat(variant)
-									project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
-								}
+									@Override
+									void onProgress(float p) {
 
-								def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
-								if (variant.isSigningReady() && isApkSigned(apkFilename)) {
-									// apk was previously signed, so we will sign it again
-									project.logger.debug("Signing is ready, and APK was previously signed")
-
-									// first, we need to download the instrumented apk
-									String instrumentedUrl = json.instrumented_url.toString()
-									project.logger.info("Downloading instrumented APK from ${instrumentedUrl}")
-
-									// add API_KEY to download url, needed only in case of Strict Mode
-									instrumentedUrl = instrumentedUrl + "?api_key=" + apiKey
-									project.logger.debug("Added api_key to download url, and is now ${instrumentedUrl}")
-
-									String baseName = FilenameUtils.getBaseName(apkFilename)
-									String tempFilename = FilenameUtils.normalize("${tempDir}/testfairy-${baseName}.apk".toString())
-									project.logger.debug("Downloading instrumented APK onto ${tempFilename}")
-									downloadFile(instrumentedUrl, tempFilename)
-
-									// resign using gradle build settings
-									resignApk(tempFilename, variant.signingConfig)
-
-									// upload the signed apk file back to testfairy
-									json = uploadSignedApk(project, extension, tempFilename)
-									(new File(tempFilename)).delete()
-
-									project.logger.debug("Signed instrumented file is available at: ${json.instrumented_url}")
-								}
-
-								println ""
-								println "Successfully uploaded to TestFairy, build is available at:"
-								println json.build_url
+									}
+								})
 							}
 
 							project.(newTaskName.toString()).dependsOn(expectingTask)
@@ -154,15 +118,176 @@ class TestFairyPlugin implements Plugin<Project> {
 		}
 	}
 
-	/**
-	 * Make sure ApiKey is configured and not empty.
-	 *
-	 * @param extension
-	 */
-	private void assertValidApiKey(extension) {
-		if (extension.getApiKey() == null || extension.getApiKey().equals("")) {
-			throw new GradleException("Please configure your TestFairy apiKey before building")
+	private static void applyProperties(AndroidUploader.Builder android, String jarSignerPath, Project project) {
+		project.logger.debug("Located jarsigner at ${jarSignerPath}")
+		android.setJarSignerPath(jarSignerPath)
+		String userAgent = "TestFairy Gradle Plugin";
+		if(project.hasProperty("testfairyUploadedBy")){
+			userAgent = userAgent + " via " + project.property("testfairyUploadedBy")
 		}
+		android.setHttpUserAgent(userAgent)
+	}
+
+	private static void applyProxy(AndroidUploader.Builder android) {
+		String proxyHost = System.getProperty("http.proxyHost")
+		if (proxyHost == null)
+			return;
+
+		int proxyPort = Integer.parseInt(System.getProperty("http.proxyPort"));
+		android.setProxyHost(proxyHost, proxyPort);
+
+		String proxyUser = System.getProperty("http.proxyUser")
+		if (proxyUser == null)
+			return;
+
+		String proxyPassword = System.getProperty("http.proxyPassword")
+		android.setProxyCredentials(proxyUser, proxyPassword)
+	}
+
+	private static void applySigning(AndroidUploader.Builder android, TestFairyExtension extension, variant, Project project, String apkFilename) {
+		boolean enableInstrumentation = variant.isSigningReady() && isApkSigned(apkFilename)
+		android.enableInstrumentation(enableInstrumentation);
+
+		if (enableInstrumentation) {
+			def signingConfig = variant.signingConfig;
+			android.setKeystore(
+				signingConfig.storeFile.getAbsolutePath(),
+				signingConfig.keyAlias,
+				signingConfig.storePassword,
+				signingConfig.keyPassword
+			)
+
+			String digestalg = project.hasProperty("testfairyDigestalg") ?
+				project.property("testfairyDigestalg") : extension.getDigestalg()
+			android.setDigestAlgorithm(digestalg)
+
+			String sigalg = project.hasProperty("testfairySigalg") ?
+				project.property("testfairySigalg") : extension.getSigalg()
+			android.setSignatureAlgorithm(sigalg)
+		}
+	}
+
+	private static void applyProguard(AndroidUploader.Builder android, TestFairyExtension extension, variant, Project project) {
+		Boolean uploadProguardMapping = project.hasProperty("testfairyUploadProguardMapping") ?
+			"true".equals(project.property("testfairyUploadProguardMapping")) :
+			extension.uploadProguardMapping;
+		if (isMinifyEnabledCompat(variant.buildType) && uploadProguardMapping) {
+			String proguardFile = getMappingFileCompat(variant)
+			project.logger.debug("Using proguard mapping file at ${proguardFile}")
+			android.setProguardMapPath(proguardFile)
+		}
+	}
+
+	private static void applyMetrics(AndroidUploader.Builder android, TestFairyExtension extension, Project project) {
+		String metrics = project.hasProperty("testfairyMetrics") ?
+				project.property("testfairyMetrics") : extension.getMetrics()
+		if (metrics != null) {
+			android.setMetrics(new Metrics.Builder().addAll(metrics).build())
+		}
+	}
+
+	private static void applyOptions(AndroidUploader.Builder android, TestFairyExtension extension, Project project) {
+		Options.Builder options = new Options.Builder();
+
+		Boolean watermark = project.hasProperty("testfairyWatermark") ?
+			"true".equals(project.property("testfairyWatermark")) :
+			extension.getIconWatermark();
+		if (watermark != null) {
+			options.setIconWatermark(watermark)
+		}
+
+		String video = project.hasProperty("testfairyVideo") ?
+			project.property("testfairyVideo") : extension.getVideo()
+		if (video != null) {
+			if ("on".equals(video)) {
+				options.setVideoRecordingOn()
+			} else if ("off".equals(video)) {
+				options.setVideoRecordingOff()
+			} else if ("wifi".equals(video)) {
+				options.setVideoRecordingWifi()
+			}
+		}
+
+		String videoQuality = project.hasProperty("testfairyVideoQuality") ?
+			project.property("testfairyVideoQuality") : extension.getVideo();
+		if (videoQuality != null) {
+			if ("high".equals(videoQuality)) {
+				options.setVideoQualityHigh()
+			} else if ("medium".equals(videoQuality)) {
+				options.setVideoQualityMedium()
+			} else if ("low".equals(videoQuality)) {
+				options.setVideoQualityLow()
+			}
+		}
+
+		String videoRate = project.hasProperty("testfairyVideoRate") ?
+			project.property("testfairyVideoRate") : extension.getVideoRate();
+		if (videoRate != null) {
+			options.setVideoRecordingRate(Float.parseFloat(videoRate))
+		}
+
+		String maxDuration = project.hasProperty("testfairyMaxDuration") ?
+				project.property("testfairyMaxDuration") : extension.getMaxDuration();
+		if (maxDuration != null) {
+			options.setMaxDuration(maxDuration)
+		}
+
+		Boolean notifyTesters = project.hasProperty("testfairyNotify") ?
+			"true".equals(project.property("testfairyNotify")) :
+			extension.getNotify();
+		if (notifyTesters != null) {
+			options.notifyTesters(notifyTesters)
+		}
+
+		Boolean autoUpdate = project.hasProperty("testfairyAutoUpdate") ?
+			"true".equals(project.property("testfairyAutoUpdate")) :
+			extension.getAutoUpdate();
+		if (autoUpdate != null) {
+			options.setAutoUpdate(autoUpdate)
+		}
+
+		Boolean anonymous = project.hasProperty("testfairyAnonymous") ?
+				"true".equals(project.property("testfairyAnonymous")) :
+				extension.anonymous();
+		if (anonymous != null) {
+			options.setAnonymous(anonymous)
+		}
+
+		Boolean shake = project.hasProperty("testfairyShake") ?
+				"true".equals(project.property("testfairyShake")) :
+				extension.anonymous();
+		if (anonymous != null) {
+			options.shakeForBugReports(shake)
+		}
+
+		Boolean recordInBackground = project.hasProperty("testfairyRecordOnBackground") ?
+			"true".equals(project.property("testfairyRecordOnBackground")) :
+			extension.getRecordOnBackground()
+		if (recordInBackground != null && extension.getRecordOnBackground()) {
+			options.setRecordInBackground()
+		}
+
+		String testers = project.hasProperty("testfairyTesterGroups") ?
+			project.property("testfairyTesterGroups") : extension.getTestersGroups();
+		if (testers != null) {
+			for (String tester : testers.split(",")) {
+				options.addTesterGroup(tester.trim());
+			}
+		}
+
+		String comment = project.hasProperty("testfairyComment")?
+			project.property("testfairyComment") : extension.getComment()
+		if (comment != null) {
+			options.setComment(comment)
+		}
+
+		String changelog = project.hasProperty("testfairyChangelog")?
+				project.property("testfairyChangelog") : extension.getChangelog()
+		if (comment != null) {
+			options.setChangelog(changelog)
+		}
+
+		android.setOptions(options.build())
 	}
 
 	/**
@@ -172,7 +297,7 @@ class TestFairyPlugin implements Plugin<Project> {
 	 * @param buildType
 	 * @return boolean
 	 */
-	private boolean isMinifyEnabledCompat(buildType) {
+	private static boolean isMinifyEnabledCompat(buildType) {
 		if (buildType.respondsTo("isMinifyEnabled")) {
 			return buildType.isMinifyEnabled()
 		} else {
@@ -180,8 +305,7 @@ class TestFairyPlugin implements Plugin<Project> {
 		}
 	}
 
-	private String getMappingFileCompat(variant) {
-
+	private static String getMappingFileCompat(variant) {
 		if (variant.metaClass.respondsTo(variant, "getMappingFile")) {
 			// getMappingFile was added in Android Plugin 0.13
 			return variant.getMappingFile().toString()
@@ -206,12 +330,30 @@ class TestFairyPlugin implements Plugin<Project> {
 	}
 
 	/**
+	 * Checks if the given APK is signed
+	 *
+	 * @param apkFilename
+	 * @return boolean
+	 */
+	private static boolean isApkSigned(String apkFilename) {
+		List<String> filenames = getApkFiles(apkFilename)
+		for (String f : filenames) {
+			if (f.startsWith("META-INF/") && f.endsWith("SF")) {
+				// found a signature file, this APK is signed
+				return true
+			}
+		}
+
+		return false
+	}
+
+	/**
 	 * Get a list of all files inside this APK file.
 	 *
 	 * @param apkFilename
-	 * @return List<String>
+	 * @return List < String >
 	 */
-	private List<String> getApkFiles(String apkFilename) {
+	private static List<String> getApkFiles(String apkFilename) {
 		List<String> files = new ArrayList<String>()
 
 		ZipFile zf = new ZipFile(apkFilename)
@@ -225,306 +367,4 @@ class TestFairyPlugin implements Plugin<Project> {
 		zf.close()
 		return files
 	}
-
-	/**
-	 * Checks if the given APK is signed
-	 *
-	 * @param apkFilename
-	 * @return boolean
-	 */
-	private boolean isApkSigned(String apkFilename) {
-
-		List<String> filenames = getApkFiles(apkFilename)
-		for (String f: filenames) {
-			if (f.startsWith("META-INF/") && f.endsWith("SF")) {
-				// found a signature file, this APK is signed
-				return true
-			}
-		}
-
-		return false
-	}
-
-	private DefaultHttpClient buildHttpClient() {
-		DefaultHttpClient httpClient = new DefaultHttpClient()
-
-		// configure proxy (patched by timothy-volvo, https://github.com/timothy-volvo/testfairy-gradle-plugin)
-		def proxyHost = System.getProperty("http.proxyHost")
-		if (proxyHost != null) {
-			def proxyPort = Integer.parseInt(System.getProperty("http.proxyPort"))
-			HttpHost proxy = new HttpHost(proxyHost, proxyPort)
-			def proxyUser = System.getProperty("http.proxyUser")
-			if (proxyUser != null) {
-				AuthScope authScope = new AuthScope(proxyUser, proxyPort)
-				Credentials credentials = new UsernamePasswordCredentials(proxyUser, System.getProperty("http.proxyPassword"))
-				httpClient.getCredentialsProvider().setCredentials(authScope, credentials)
-			}
-
-			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy)
-		}
-
-		return httpClient
-	}
-
-	private Object post(String url, MultipartEntity entity, String via) {
-		DefaultHttpClient httpClient = buildHttpClient()
-		HttpPost post = new HttpPost(url)
-		String userAgent = "TestFairy Gradle Plugin" + via;
-		post.addHeader("User-Agent", userAgent)
-		post.setEntity(entity)
-		HttpResponse response = httpClient.execute(post)
-
-		String json = EntityUtils.toString(response.getEntity())
-		def parser = new JsonSlurper()
-		def parsed = parser.parseText(json)
-		if (!parsed.status.equals("ok")) {
-			throw new GradleException("Failed with json: " + json)
-		}
-
-		return parsed
-	}
-
-	/**
-	 * Downloads the entire page at a remote location, onto a local file.
-	 *
-	 * @param url
-	 * @param localFilename
-	 */
-	private void downloadFile(String url, String localFilename) {
-		DefaultHttpClient httpClient = buildHttpClient()
-		HttpGet httpget = new HttpGet(url)
-		HttpResponse response = httpClient.execute(httpget)
-		HttpEntity entity = response.getEntity()
-
-		FileOutputStream fis = new FileOutputStream(localFilename)
-		IOUtils.copy(entity.getContent(), fis)
-		fis.close()
-	}
-
-	/**
-	 * Upload an APK using /api/upload REST service.
-	 *
-	 * @param project
-	 * @param extension
-	 * @param apkFilename
-	 * @return Object parsed json
-	 */
-	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
-		String serverEndpoint = extension.getServerEndpoint()
-		String url = "${serverEndpoint}/api/upload"
-		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
-		String via = ""
-
-		if (project.hasProperty("testfairyChangelog")) {
-			// optional: testfairyChangelog, as passed through -P
-			String changelog = project.property("testfairyChangelog")
-			entity.addPart('changelog', new StringBody(changelog))
-		}
-
-		if(project.hasProperty("testfairyUploadedBy")){
-			via = " via " + project.property("testfairyUploadedBy")
-		}
-
-		return post(url, entity, via)
-	}
-
-	/**
-	 * Upload a signed APK using /api/upload-signed REST service.
-	 *
-	 * @param project
-	 * @param extension
-	 * @param apkFilename
-	 * @return Object parsed json
-	 */
-	private Object uploadSignedApk(Project project, TestFairyExtension extension, String apkFilename) {
-		String serverEndpoint = extension.getServerEndpoint()
-		String url = "${serverEndpoint}/api/upload-signed"
-		String via = ""
-
-		MultipartEntity entity = new MultipartEntity()
-		entity.addPart('api_key', new StringBody(extension.getApiKey()))
-		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
-
-		if (extension.getTestersGroups()) {
-			// if omitted, no emails will be sent to testers
-			entity.addPart('testers-groups', new StringBody(extension.getTestersGroups()))
-		}
-
-		// add notify "on" or "off"
-		entity.addPart('notify', new StringBody(extension.getNotify() ? "on" : "off"))
-
-		// add auto-update "on" or "off"
-		entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
-
-
-		if(project.hasProperty("testfairyUploadedBy")){
-			via = " via " + project.property("testfairyUploadedBy")
-		}
-
-		return post(url, entity, via)
-	}
-
-	/**
-	 * Build MultipartEntity for API parameters on Upload of an APK
-	 *
-	 * @param extension
-	 * @return MultipartEntity
-	 */
-	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
-		String apiKey = extension.getApiKey()
-
-		MultipartEntity entity = new MultipartEntity()
-		entity.addPart('api_key', new StringBody(apiKey))
-		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
-
-		if (mappingFilename != null) {
-			entity.addPart('symbols_file', new FileBody(new File(mappingFilename)))
-		}
-
-		if (extension.getIconWatermark()) {
-			// if omitted, default value is "off"
-			entity.addPart('icon-watermark', new StringBody("on"))
-		}
-
-		if (extension.getVideo()) {
-			// if omitted, default value is "on"
-			entity.addPart('video', new StringBody(extension.getVideo()))
-		}
-
-		if (extension.getVideoQuality()) {
-			// if omitted, default value is "high"
-			entity.addPart('video-quality', new StringBody(extension.getVideoQuality()))
-		}
-
-		if (extension.getVideoRate()) {
-			// if omitted, default is 1 frame per second (videoRate = 1.0)
-			entity.addPart('video-rate', new StringBody(extension.getVideoRate()))
-		}
-
-		if (extension.getMetrics()) {
-			// if omitted, by default will record as much as possible
-			entity.addPart('metrics', new StringBody(extension.getMetrics()))
-		}
-
-		if (extension.getMaxDuration()) {
-			// override default value
-			entity.addPart('max-duration', new StringBody(extension.getMaxDuration()))
-		}
-
-		if (extension.getRecordOnBackground()) {
-			// enable record on background option
-			entity.addPart('record-on-background', new StringBody("on"))
-		}
-
-		return entity
-	}
-
-	/**
-	 * Remove all signature files from archive, turning it back to unsigned.
-	 *
-	 * @param apkFilename
-	 * @param outputFilename
-	 */
-	void removeSignature(String apkFilename, String outFilename) {
-
-		ZipArchiveInputStream zais = new ZipArchiveInputStream(new FileInputStream(apkFilename))
-		ZipArchiveOutputStream zaos = new ZipArchiveOutputStream(new FileOutputStream(outFilename))
-		while (true) {
-			ZipArchiveEntry entry = zais.getNextZipEntry()
-			if (entry == null) {
-				break
-			}
-
-			if (entry.getName().startsWith("META-INF/")) {
-				// skip META-INF files
-				continue
-			}
-
-			ZipArchiveEntry zipEntry = new ZipArchiveEntry(entry.getName())
-			if (entry.getMethod() == ZipEntry.STORED) {
-				// when storing files, we need to copy the size and crc ourselves
-				zipEntry.setSize(entry.getSize())
-				zipEntry.setCrc(entry.getCrc())
-			}
-
-			zaos.setMethod(entry.getMethod())
-			zaos.putArchiveEntry(zipEntry)
-			IOUtils.copy(zais, zaos)
-			zaos.closeArchiveEntry()
-		}
-
-		zaos.close()
-		zais.close()
-	}
-
-	/**
-	 * Remove previous signature and sign archive again. Works in-place, overwrites the original apk file.
-	 *
-	 * @param apkFilename
-	 * @param sc
-	 */
-	void resignApk(String apkFilename, sc) {
-
-		// use a temporary file in the same directory as apkFilename
-		String outFilename = apkFilename + ".temp"
-
-		// remove signature onto temp file, sign and zipalign back onto original filename
-		removeSignature(apkFilename, outFilename)
-		signApkFile(outFilename, sc)
-		zipAlignFile(outFilename, apkFilename)
-		(new File(outFilename)).delete()
-
-		// make sure everything is still intact
-		validateApkSignature(apkFilename)
-	}
-
-	/**
-	 * Sign an APK file with the given signingConfig settings.
-	 *
-	 * @param apkFilename
-	 * @param sc
-	 */
-	void signApkFile(String apkFilename, sc) {
-		def command = [jarSignerPath, "-keystore", sc.storeFile, "-storepass", sc.storePassword, "-keypass", sc.keyPassword, "-digestalg", "SHA1", "-sigalg", "MD5withRSA", apkFilename, sc.keyAlias]
-		def proc = command.execute()
-		proc.consumeProcessOutput()
-		proc.waitFor()
-		if (proc.exitValue()) {
-			throw new GradleException("Could not jarsign ${apkFilename}, used this command:\n${command}")
-		}
-
-	}
-
-	/**
-	 * Zipaligns input APK file onto outFilename.
-	 *
-	 * @param inFilename
-	 * @param outFilename
-	 */
-	void zipAlignFile(String inFilename, String outFilename) {
-		def command = [zipAlignPath, "-f", "4", inFilename, outFilename]
-		def proc = command.execute()
-		proc.consumeProcessOutput()
-		proc.waitFor()
-		if (proc.exitValue()) {
-			throw new GradleException("Could not zipalign ${inFilename} onto ${outFilename}")
-		}
-	}
-
-	/**
-	 * Verifies that APK is signed properly. Will throw an exception
-	 * if not.
-	 *
-	 * @param apkFilename
-	 */
-	void validateApkSignature(String apkFilename) {
-		def command = [jarSignerPath, "-verify", apkFilename]
-		def proc = command.execute()
-		proc.consumeProcessOutput()
-		proc.waitFor()
-		if (proc.exitValue()) {
-			throw new GradleException("Could not jarsign ${apkFilename}, used this command:\n${command}")
-		}
-	}
 }
-

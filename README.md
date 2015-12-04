@@ -5,43 +5,18 @@ This plugin integrates TestFairy platform with the Gradle build system. With thi
 
 [![Build Status](https://travis-ci.org/testfairy/testfairy-gradle-plugin.svg?branch=master)](https://travis-ci.org/testfairy/testfairy-gradle-plugin)
 
-Installation
----------
-
-A typical TestFairy Gradle Plugin installation takes less than 20 seconds. Installation consists of adding the following to your ***build.gradle*** file:
-
- 1. Add the TestFairy Maven repository:
-
-        maven { url 'https://www.testfairy.com/maven' }
-    
- 2. Add plugin dependency: 
-
-        classpath 'com.testfairy.plugins.gradle:testfairy:1.+'
-
- 3. Apply plugin:
-
-        apply plugin: 'testfairy'
-
- 4. Configure your TestFairy API key by adding this to your "*android*" section: (Your TestFairy API key is in your account settings)
-
-        testfairyConfig {
-            apiKey "1234567890abcdef"
-        }
-
-Complete Example
+Quick Start
 ----------------
-
 For convenience, here is a snippet of a complete ***build.gradle*** file, including the additions above.
 
     buildscript {
         repositories {
             mavenCentral()
-            maven { url 'https://www.testfairy.com/maven' }
         }
     
         dependencies {
-            classpath 'com.android.tools.build:gradle:0.6'
-            classpath 'com.testfairy.plugins.gradle:testfairy:1.+'
+            ...
+            classpath 'com.testfairy:testfairy-gradle-plugin:<latest>'
         }
     }
     
@@ -49,11 +24,12 @@ For convenience, here is a snippet of a complete ***build.gradle*** file, includ
     apply plugin: 'testfairy'
     
     android {
+        ...
         testfairyConfig {
             apiKey "1234567890abcdef"
         }
+        ...
     }
-
 
 Usage
 -----
@@ -71,26 +47,54 @@ Optionally, you can add a *changelog* to this build. This changelog will appear 
 Additional Parameters
 ---------------------
 
-By default, the Gradle plugin will record all metrics, of highest quality video at 1 frames per second. However, all of these are available through build.gradle configuration. Please consider the following example:
+Values in `testfairyConfig` can be also be passed at the command line prefixed with `-P`. 
 
-    android {
-        testfairyConfig {
-            metrics "cpu,memory,network,logcat"
-            video "wifi"
-            videoRate "0.5"
-            videoQuality "low"
-            maxDuration "15m"
-            recordOnBackground true
-            iconWatermark true
-            testersGroups "dev,qa,friends"
-            notify true
-            maxDuration "1h"
-            autoUpdate true
-            uploadProguardMapping true
-        }
+| testfairyConfig       | command line option            | value                                                                                 |
+| ---------------       | -------------------            | -----                                                                                 |
+| apiKey                | testfairyApiKey                | key from http://app.testfairy.com/settings                                            |
+| iconWatermark         | testfairyWatermark             | true/false                                                                            |
+| video                 | testfairyVideo                 | "on"/"off"/"wifi"                                                                     |
+| videoQuality          | testfairyVideoQuality          | "high"/"medium"/"low"                                                                 |
+| videoRate             | testfairyVideoRate             | float as string eg "1.0"                                                              |
+| testersGroups         | testfairyTesterGroups          | comma separated list or "all" eg. "qa,dev"                                            |
+| maxDuration           | testfairyMaxDuration           | duration eg "30m" or "1h"                                                             |
+| metrics               | testfairyMetrics               | comma separated list eg. "cpu,memory,logcat"                                          |
+| comment               | testfairyComment               | comment or path to text file (prefix with @) eg. "comment" or "@/path/to/comment.txt" |
+| changelog             | testfairyChangelog             | changelog string                                                                      |
+| digestalg             | testfairyDigestalg             | Digest Algorithm defaults to "SHA1"                                                   |
+| sigalg                | testfairySigalg                | Signature Algorithm defaults to "MD5withRSA"                                          |
+| notify                | testfairyNotify                | true/false                                                                            |
+| anonymous             | testfairyAnonymous             | true/false                                                                            |
+| shake                 | testfairyShake                 | true/false                                                                            |
+| autoUpdate            | testfairyAutoUpdate            | true/false                                                                            |
+| recordOnBackground    | testfairyRecordOnBackground    | true/false                                                                            |
+| uploadProguardMapping | testfairyUploadProguardMapping | true/false                                                                            |
+
+So the follow two are equivalent (note that uploadProguardMapping:
+```
+android {
+    testfairyConfig {
+        apiKey "api_key"
+        iconWatermark true
+        metrics "cpu,memory,network,logcat"
+        video "wifi"
+        videoRate "1.5"
+        videoQuality "low"
+        maxDuration "15m"
+        recordOnBackground true
+        testersGroups "dev,qa,friends"
+        notify true
+        autoUpdate true
+        uploadProguardMapping true
     }
-    
-The example above will make sure TestFairy records a low quality video, at a frame every 2 seconds, only if wifi is available. Max session duration for video is 15 minutes, and only cpu, memory, network and logcat metrics are recorded. And watermark will be added to the icon to distinguish TestFairy builds. Previous builds will be automatically updated to latest versions and recorded sessions are capped at 1 hour. Some testers will be invited automatically, and notifications will be sent by email.
+}
+```
+
+```
+> ./gradle testfairyDebug -PtestfairyApiKey=api_key -PtestfairyWatermark=true -PtestfairyMetrics=cpu,memory,network,logcat -PtestfairyVideo=wifi -PtestfairyVideoQuality=low -PtestfairyVideoRate=1.5 -PtestfairyMaxDuration=15m -PtestfairyRecordOnBackground=true -PtestfairyTesterGroups=dev,qa,friends -PtestfairyNotify=true -PtestfairyAutoUpdate=true -PtestfairyUploadProguardMapping=true
+```
+
+This allows you define variables at the command line or in a `gradle.properties` file. Arguments at the command line preceed the values in `testfairyConfig`. Arguments such as testfairyApiKey can even accept environment variables securely from build systems.
 
 For more details about parameter values, see [this](http://docs.testfairy.com/Upload_API.html).
 
