@@ -8,7 +8,7 @@ This plugin integrates TestFairy platform with the Gradle build system. With thi
 Installation
 ---------
 
-A typical TestFairy Gradle Plugin installation takes less than 20 seconds. Installation consists of adding the following to your ***build.gradle*** file:
+A typical TestFairy Gradle Plugin installation takes less than 60 seconds. Installation consists of adding the following to your ***build.gradle*** file:
 
  1. Add the TestFairy Maven repository:
 
@@ -22,7 +22,7 @@ A typical TestFairy Gradle Plugin installation takes less than 20 seconds. Insta
 
         apply plugin: 'testfairy'
 
- 4. Configure your TestFairy API key by adding this to your "*android*" section: (Your TestFairy API key is in your account settings)
+ 4. Configure your TestFairy API key by adding this to your "*android*" section: (Your TestFairy API key is in your [account settings](https://app.testfairy.com/settings))
 
         testfairyConfig {
             apiKey "1234567890abcdef"
@@ -40,12 +40,10 @@ For convenience, here is a snippet of a complete ***build.gradle*** file, includ
         }
     
         dependencies {
-            classpath 'com.android.tools.build:gradle:0.6'
             classpath 'com.testfairy.plugins.gradle:testfairy:1.+'
         }
     }
     
-    apply plugin: 'android'
     apply plugin: 'testfairy'
     
     android {
@@ -127,4 +125,4 @@ Please send bug reports to support@testfairy.com
 
 [1]: https://raw.githubusercontent.com/testfairy/testfairy-gradle-plugin/master/docs/images/preview-open-edit-configurations.png
 [2]: https://raw.githubusercontent.com/testfairy/testfairy-gradle-plugin/master/docs/images/preview-add-gradle-task.png
-            
+
