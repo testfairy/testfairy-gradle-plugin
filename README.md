@@ -70,7 +70,7 @@ Values in `testfairyConfig` can be also be passed at the command line prefixed w
 | recordOnBackground    | testfairyRecordOnBackground    | true/false                                                                            |
 | uploadProguardMapping | testfairyUploadProguardMapping | true/false                                                                            |
 
-So the follow two are equivalent (note that uploadProguardMapping:
+So the follow two are equivalent:
 ```
 android {
     testfairyConfig {
@@ -115,15 +115,6 @@ This plugin is also Android Studio and Intellij-friendly. To upload builds direc
 2. Add a new Gradle configuration, use task "*testfairyDebug*" or another, depending on your build type.
 
  ![Add new Gradle configuration screenshot][2]
-
-Changelog
-----
-
-1.12 (2015-02-04)
-  - Removed dependency for 'zip' command.
-  - Zipalign signed APK before uploading.
-  - Compatible with JDK 1.6.
-
 Bugs
 ----
 
