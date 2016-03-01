@@ -3,27 +3,32 @@ env:
   global:
   - secure: K9gbqAQ93hUMqL/njHGTZwyLAL17036WuFFZAxiEKba4Fh+tTAwyvyhii/XxfNoopne5uO+SMEGcBKz05u3TVB7mFtfTCdOghx9e/FM9hJx/rL3XBajDH4OH/qpzRDDVc2ci4Lu7mhe68spynPw59/CyT7Aoty2wXjcNJ0wyBE0=
   - secure: Rb4txJS5LaKdckS2Gdg24+3t2TEB02LhbjBKSRkQbVbNY0mLgGo4t3m4DvLC8QHhEJz+78P1rUSxUA8RDTF0j/tviqJaBH0YgHthCCaRruK5cABiSlivDHOUZLkEimkClEpLp7I0TKOb+ZMnIW5BLXIXJ6UWHPRo/G3NrvyIvJM=
+
 jdk:
-- oraclejdk7
-- openjdk7
+  - oraclejdk7
+  - openjdk7
+
 android:
   components:
   - build-tools-19.0.0
   - build-tools-19.1.0
   - android-8
   - android-19
+
 before_install:
-- openssl aes-256-cbc -K $encrypted_86872c555467_key -iv $encrypted_86872c555467_iv -in secring.gpg.enc -out secring.gpg -d
-- sudo apt-get update
-- sudo apt-get install php5
-- curl -sS https://getcomposer.org/installer | php
-- sudo mv composer.phar /usr/bin/composer
+  - openssl aes-256-cbc -K $encrypted_86872c555467_key -iv $encrypted_86872c555467_iv -in secring.gpg.enc -out secring.gpg -d
+  - sudo apt-get update
+  - sudo apt-get install php5
+  - curl -sS https://getcomposer.org/installer | php
+  - sudo mv composer.phar /usr/bin/composer
+
 install:
-- composer install --no-interaction
+  - composer install --no-interaction
+
 script:
-- ./gradlew uploadArchives -PisRelease=false -Prevision="1.0.0-SNAPSHOT" -PsonatypeUsername="${SONATYPE_USERNAME}"
-  -PsonatypePassword="${SONATYPE_PASSWORD}" --info
-- ./vendor/bin/phpunit
+  - ./gradlew uploadArchives -PisRelease=false -Prevision="1.0.0-SNAPSHOT" -PsonatypeUsername="${SONATYPE_USERNAME}" -PsonatypePassword="${SONATYPE_PASSWORD}" --info
+  - ./vendor/bin/paratest -f -p 8
+
 deploy:
   provider: script
   skip_cleanup: true
