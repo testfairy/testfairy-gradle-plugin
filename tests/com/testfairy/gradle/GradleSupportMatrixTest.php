@@ -135,7 +135,7 @@
 			$android = $this->getAndroidHome() . "/tools/android";
 
 			// create an empty project first
-			$TEST_DIR="/tmp/.gradle-test";
+			$TEST_DIR="/tmp/.gradle-test-" . abs(crc32(uniqid("")));;
 			system("rm -rf $TEST_DIR");
 			@mkdir($TEST_DIR);
 			exec("$android create project -v $plugin -n GradleTest -t android-8 -p $TEST_DIR -g -k com.testfairy.tests.gradle -a MainActivity", $output);
@@ -159,7 +159,7 @@
 			exec("cd $TEST_DIR; bash gradlew testfairyRelease --debug", $output);
 
 			// make sure it uploaded successfully to testfairy
-			$found = null;
+			$found = false;
 			foreach($output as $line) {
 				if (preg_match("/Successfully uploaded to TestFairy, build is available at:/", $line)) {
 					$found = true;
