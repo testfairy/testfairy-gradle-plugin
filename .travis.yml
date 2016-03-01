@@ -18,7 +18,7 @@ android:
 before_install:
   - openssl aes-256-cbc -K $encrypted_86872c555467_key -iv $encrypted_86872c555467_iv -in secring.gpg.enc -out secring.gpg -d
   - sudo apt-get update
-  - sudo apt-get install php5
+  - sudo apt-get install php54
   - curl -sS https://getcomposer.org/installer | php
   - sudo mv composer.phar /usr/bin/composer
 
