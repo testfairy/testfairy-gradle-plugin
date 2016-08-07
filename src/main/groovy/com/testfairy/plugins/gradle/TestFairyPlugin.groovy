@@ -272,7 +272,6 @@ class TestFairyPlugin implements Plugin<Project> {
 		String userAgent = "TestFairy Gradle Plugin" + via;
 		post.addHeader("User-Agent", userAgent)
 		post.setEntity(entity)
-		HttpResponse response = httpClient.execute(post)
 
 		String json = EntityUtils.toString(response.getEntity())
 		def parser = new JsonSlurper()
@@ -293,7 +292,6 @@ class TestFairyPlugin implements Plugin<Project> {
 	private void downloadFile(String url, String localFilename) {
 		DefaultHttpClient httpClient = buildHttpClient()
 		HttpGet httpget = new HttpGet(url)
-		HttpResponse response = httpClient.execute(httpget)
 		HttpEntity entity = response.getEntity()
 
 		FileOutputStream fis = new FileOutputStream(localFilename)
