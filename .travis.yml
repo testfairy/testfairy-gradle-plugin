@@ -25,6 +25,7 @@ android:
     - android-19
 
 script:
+  - android list targets
   - bash gradlew uploadArchives
   - ./vendor/bin/phpunit
 
