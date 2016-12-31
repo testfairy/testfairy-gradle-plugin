@@ -187,7 +187,7 @@
 			$this->assertZipAligned("${TEST_DIR}/signed.apk");
 		}
 
-		// Gradle Wrapper 1.10
+				// Gradle Wrapper 1.10
                 public function testGradleWrapper_1_10_AndroidPlugin_0_10_0() { }
                 public function testGradleWrapper_1_10_AndroidPlugin_0_10_1() { }
                 public function testGradleWrapper_1_10_AndroidPlugin_0_10_2() { }
