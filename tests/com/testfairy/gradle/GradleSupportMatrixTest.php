@@ -121,6 +121,7 @@
 		private function assertZipaligned($filename) {
 			$home = $this->getAndroidHome();
 			exec("${home}/build-tools/19.1.0/zipalign -c 4 '$filename'", $output, $retval);
+			echo $output;
 			$this->assertEquals(0, $retval, "APK file was not zipaligned");
 		}
 
