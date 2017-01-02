@@ -144,7 +144,7 @@
 			// create a certificate for this
 			$time = time();
 			$dname = "CN=${time},OU=organizational_unit,O=organization,L=locality,S=state,C=US";
-			system("keytool -genkey -keystore ${TEST_DIR}/random.keystore -alias android_app -keyalg RSA -keysize 2048 -validity 3650 -keypass 'swordfish' -storepass 'swordfish' -dname '$dname' 2>&1");
+			system("keytool -genkey -keystore ${TEST_DIR}/random.keystore -alias android_app -keyalg RSA -keysize 2048 -validity 3650 -keypass 'swordfish' -storepass 'swordfish' -dname '$dname' ");
 
 			$useMinify = ($plugin >= "0.14");
 			$this->changeDistributionUrl("$TEST_DIR/gradle/wrapper/gradle-wrapper.properties", $wrapper);
