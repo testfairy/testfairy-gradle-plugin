@@ -121,7 +121,6 @@
 		private function assertZipaligned($filename) {
 			$home = $this->getAndroidHome();
 			exec("${home}/build-tools/19.1.0/zipalign -c 4 '$filename'", $output, $retval);
-			print_r($output);
 			$this->assertEquals(0, $retval, "APK file was not zipaligned");
 		}
 
@@ -181,11 +180,11 @@
 			$this->assertNotNull($signedUrl, "Could not find signed instrumented file url in debug logs");
 
 			// fetch signed apk
-			copy($signedUrl, "${TEST_DIR}/signed.apk");
+			copy($signedUrl, "${TEST_DIR}/signed-$time.apk");
 
 			// make sure app is signed
-			$this->assertSignedByCN("${TEST_DIR}/signed.apk", $time);
-			$this->assertZipAligned("${TEST_DIR}/signed.apk");
+			$this->assertSignedByCN("${TEST_DIR}/signed-$time.apk", $time);
+			$this->assertZipAligned("${TEST_DIR}/signed-$time.apk");
 		}
 
 				// Gradle Wrapper 1.10
