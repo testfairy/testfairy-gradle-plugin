@@ -120,8 +120,7 @@
 
 		private function assertZipaligned($filename) {
 			$home = $this->getAndroidHome();
-			exec("${home}/build-tools/19.1.0/zipalign -c -v 4 '$filename'", $output, $retval);
-			print_r($output);
+			exec("${home}/build-tools/19.1.0/zipalign -c 4 '$filename'", $output, $retval);
 			$this->assertEquals(0, $retval, "APK file was not zipaligned");
 		}
 
@@ -144,7 +143,7 @@
 			// create a certificate for this
 			$time = time();
 			$dname = "CN=${time},OU=organizational_unit,O=organization,L=locality,S=state,C=US";
-			system("keytool -genkey -keystore ${TEST_DIR}/random.keystore -alias android_app -keyalg RSA -keysize 2048 -validity 3650 -keypass 'swordfish' -storepass 'swordfish' -dname '$dname' ");
+			system("keytool -genkey -keystore ${TEST_DIR}/random.keystore -alias android_app -keyalg RSA -keysize 2048 -validity 3650 -keypass 'swordfish' -storepass 'swordfish' -dname '$dname' 2>&1");
 
 			$useMinify = ($plugin >= "0.14");
 			$this->changeDistributionUrl("$TEST_DIR/gradle/wrapper/gradle-wrapper.properties", $wrapper);
@@ -181,15 +180,10 @@
 			$this->assertNotNull($signedUrl, "Could not find signed instrumented file url in debug logs");
 
 
-			$apkFilePath = "${TEST_DIR}/signed-$time.apk";
+			$apkFilePath = "${TEST_DIR}/signed.apk";
 
 			// fetch signed apk
 			copy($signedUrl, $apkFilePath);
-
-			$output = array();
-			exec("which zipalign", $output);
-			exec("ls -l $apkFilePath", $output);
-			print_r($output);
 
 			// make sure app is signed
 			$this->assertSignedByCN($apkFilePath, $time);
@@ -198,61 +192,61 @@
 
 				// Gradle Wrapper 1.10
                 public function testGradleWrapper_1_10_AndroidPlugin_0_10_0() { }
-//                public function testGradleWrapper_1_10_AndroidPlugin_0_10_1() { }
-//                public function testGradleWrapper_1_10_AndroidPlugin_0_10_2() { }
-//                public function testGradleWrapper_1_10_AndroidPlugin_0_10_4() { }
-//                public function testGradleWrapper_1_10_AndroidPlugin_0_11_0() { }
-//                public function testGradleWrapper_1_10_AndroidPlugin_0_12_0() { }
-//                public function testGradleWrapper_1_10_AndroidPlugin_0_12_1() { }
-//                public function testGradleWrapper_1_10_AndroidPlugin_0_12_2() { }
-//
-//                // Gradle Wrapper 1.11
-//                public function testGradleWrapper_1_11_AndroidPlugin_0_10_0() { }
-//                public function testGradleWrapper_1_11_AndroidPlugin_0_10_1() { }
-//                public function testGradleWrapper_1_11_AndroidPlugin_0_10_2() { }
-//                public function testGradleWrapper_1_11_AndroidPlugin_0_10_4() { }
-//                public function testGradleWrapper_1_11_AndroidPlugin_0_11_0() { }
-//                public function testGradleWrapper_1_11_AndroidPlugin_0_12_0() { }
-//                public function testGradleWrapper_1_11_AndroidPlugin_0_12_1() { }
-//                public function testGradleWrapper_1_11_AndroidPlugin_0_12_2() { }
-//
-//                // Gradle Wrapper 1.12
-//                public function testGradleWrapper_1_12_AndroidPlugin_0_10_0() { }
-//                public function testGradleWrapper_1_12_AndroidPlugin_0_10_1() { }
-//                public function testGradleWrapper_1_12_AndroidPlugin_0_10_2() { }
-//                public function testGradleWrapper_1_12_AndroidPlugin_0_10_4() { }
-//                public function testGradleWrapper_1_12_AndroidPlugin_0_11_0() { }
-//                public function testGradleWrapper_1_12_AndroidPlugin_0_12_0() { }
-//                public function testGradleWrapper_1_12_AndroidPlugin_0_12_1() { }
-//                public function testGradleWrapper_1_12_AndroidPlugin_0_12_2() { }
-//
-//                // Gradle Wrapper 2.1
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_13_0() { }
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_13_1() { }
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_13_2() { }
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_13_3() { }
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_14_0() { }
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_14_1() { }
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_14_2() { }
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_14_3() { }
-//                public function testGradleWrapper_2_1_AndroidPlugin_0_14_4() { }
-//
-//                // Gradle Wrapper 2.2
-//                public function testGradleWrapper_2_2_AndroidPlugin_0_14_0() { }
-//                public function testGradleWrapper_2_2_AndroidPlugin_0_14_1() { }
-//                public function testGradleWrapper_2_2_AndroidPlugin_0_14_2() { }
-//                public function testGradleWrapper_2_2_AndroidPlugin_0_14_3() { }
-//                public function testGradleWrapper_2_2_AndroidPlugin_0_14_4() { }
-//                public function testGradleWrapper_2_2_AndroidPlugin_1_0_0() { }
-//                public function testGradleWrapper_2_2_AndroidPlugin_1_0_1() { }
-//
-//                // Gradle Wrapper 2.14
-//                public function testGradleWrapper_2_14_AndroidPlugin_1_5_0() { }
-//
-//                // Gradle Wrapper 2.14.1
-//                public function testGradleWrapper_2_14_1_AndroidPlugin_2_1_3() { }
+                public function testGradleWrapper_1_10_AndroidPlugin_0_10_1() { }
+                public function testGradleWrapper_1_10_AndroidPlugin_0_10_2() { }
+                public function testGradleWrapper_1_10_AndroidPlugin_0_10_4() { }
+                public function testGradleWrapper_1_10_AndroidPlugin_0_11_0() { }
+                public function testGradleWrapper_1_10_AndroidPlugin_0_12_0() { }
+                public function testGradleWrapper_1_10_AndroidPlugin_0_12_1() { }
+                public function testGradleWrapper_1_10_AndroidPlugin_0_12_2() { }
 
-                // Gradle Wrapper 3.2.1 - not supported
+                // Gradle Wrapper 1.11
+                public function testGradleWrapper_1_11_AndroidPlugin_0_10_0() { }
+                public function testGradleWrapper_1_11_AndroidPlugin_0_10_1() { }
+                public function testGradleWrapper_1_11_AndroidPlugin_0_10_2() { }
+                public function testGradleWrapper_1_11_AndroidPlugin_0_10_4() { }
+                public function testGradleWrapper_1_11_AndroidPlugin_0_11_0() { }
+                public function testGradleWrapper_1_11_AndroidPlugin_0_12_0() { }
+                public function testGradleWrapper_1_11_AndroidPlugin_0_12_1() { }
+                public function testGradleWrapper_1_11_AndroidPlugin_0_12_2() { }
+
+                // Gradle Wrapper 1.12
+                public function testGradleWrapper_1_12_AndroidPlugin_0_10_0() { }
+                public function testGradleWrapper_1_12_AndroidPlugin_0_10_1() { }
+                public function testGradleWrapper_1_12_AndroidPlugin_0_10_2() { }
+                public function testGradleWrapper_1_12_AndroidPlugin_0_10_4() { }
+                public function testGradleWrapper_1_12_AndroidPlugin_0_11_0() { }
+                public function testGradleWrapper_1_12_AndroidPlugin_0_12_0() { }
+                public function testGradleWrapper_1_12_AndroidPlugin_0_12_1() { }
+                public function testGradleWrapper_1_12_AndroidPlugin_0_12_2() { }
+
+                // Gradle Wrapper 2.1
+                public function testGradleWrapper_2_1_AndroidPlugin_0_13_0() { }
+                public function testGradleWrapper_2_1_AndroidPlugin_0_13_1() { }
+                public function testGradleWrapper_2_1_AndroidPlugin_0_13_2() { }
+                public function testGradleWrapper_2_1_AndroidPlugin_0_13_3() { }
+                public function testGradleWrapper_2_1_AndroidPlugin_0_14_0() { }
+                public function testGradleWrapper_2_1_AndroidPlugin_0_14_1() { }
+                public function testGradleWrapper_2_1_AndroidPlugin_0_14_2() { }
+                public function testGradleWrapper_2_1_AndroidPlugin_0_14_3() { }
+                public function testGradleWrapper_2_1_AndroidPlugin_0_14_4() { }
+
+                // Gradle Wrapper 2.2
+                public function testGradleWrapper_2_2_AndroidPlugin_0_14_0() { }
+                public function testGradleWrapper_2_2_AndroidPlugin_0_14_1() { }
+                public function testGradleWrapper_2_2_AndroidPlugin_0_14_2() { }
+                public function testGradleWrapper_2_2_AndroidPlugin_0_14_3() { }
+                public function testGradleWrapper_2_2_AndroidPlugin_0_14_4() { }
+                public function testGradleWrapper_2_2_AndroidPlugin_1_0_0() { }
+                public function testGradleWrapper_2_2_AndroidPlugin_1_0_1() { }
+
+                // Gradle Wrapper 2.14
+                public function testGradleWrapper_2_14_AndroidPlugin_1_5_0() { }
+
+                // Gradle Wrapper 2.14.1
+                public function testGradleWrapper_2_14_1_AndroidPlugin_2_1_3() { }
+
+                // Gradle Wrapper 3.2.1 - not supported (yet)
                 // public function testGradleWrapper_3_2_1_AndroidPlugin_2_1_3() { }
 
 	}

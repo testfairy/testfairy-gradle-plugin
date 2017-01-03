@@ -26,6 +26,5 @@ android:
 
 script:
   - bash gradlew uploadArchives
-  - which zipalign
   - ./vendor/bin/phpunit
 
