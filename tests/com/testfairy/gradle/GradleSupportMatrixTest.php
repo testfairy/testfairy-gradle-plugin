@@ -185,6 +185,8 @@
 			// fetch signed apk
 			copy($signedUrl, $apkFilePath);
 
+			$output = array();
+			exec("which zipalign", $output);
 			exec("ls -l $apkFilePath", $output);
 			print_r($output);
 
