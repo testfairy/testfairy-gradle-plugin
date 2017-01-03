@@ -188,11 +188,11 @@
 		}
 
 				// Gradle Wrapper 1.10
-                public function testGradleWrapper_1_10_AndroidPlugin_0_10_0() { }
+//                public function testGradleWrapper_1_10_AndroidPlugin_0_10_0() { }
 //                public function testGradleWrapper_1_10_AndroidPlugin_0_10_1() { }
 //                public function testGradleWrapper_1_10_AndroidPlugin_0_10_2() { }
 //                public function testGradleWrapper_1_10_AndroidPlugin_0_10_4() { }
-//                public function testGradleWrapper_1_10_AndroidPlugin_0_11_0() { }
+                public function testGradleWrapper_1_10_AndroidPlugin_0_11_0() { }
 //                public function testGradleWrapper_1_10_AndroidPlugin_0_12_0() { }
 //                public function testGradleWrapper_1_10_AndroidPlugin_0_12_1() { }
 //                public function testGradleWrapper_1_10_AndroidPlugin_0_12_2() { }
