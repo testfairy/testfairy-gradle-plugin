@@ -182,11 +182,11 @@
 
 			$apkFilePath = "${TEST_DIR}/signed-$time.apk";
 
-			exec("ls -l $apkFilePath", $output);
-			print_r($output);
-
 			// fetch signed apk
 			copy($signedUrl, $apkFilePath);
+
+			exec("ls -l $apkFilePath", $output);
+			print_r($output);
 
 			// make sure app is signed
 			$this->assertSignedByCN($apkFilePath, $time);
