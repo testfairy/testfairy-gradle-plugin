@@ -52,8 +52,8 @@ uploadArchives {
 
 				developers {
 					developer {
-						name 'Gil Megidish'
-						email 'gil@testfairy.com'
+						name 'TestFairy'
+						email 'support@testfairy.com'
 						organization 'TestFairy'
 						organizationUrl 'https://www.testfairy.com'
 					}
