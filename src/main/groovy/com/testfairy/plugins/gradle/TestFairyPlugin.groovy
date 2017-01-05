@@ -325,6 +325,13 @@ class TestFairyPlugin implements Plugin<Project> {
 			via = " via " + project.property("testfairyUploadedBy")
 		}
 
+		if(!project.hasProperty("instrumentation")){
+			// instrumentation off by default
+			entity.addPart('instrumentation', new StringBody("off"))
+		} else {
+			entity.addPart('instrumentation', new StringBody(project.property("instrumentation")))
+		}
+
 		return post(url, entity, via)
 	}
 

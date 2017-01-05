@@ -135,7 +135,7 @@
 			$android = $this->getAndroidHome() . "/tools/android";
 
 			// create an empty project first
-			$TEST_DIR="/tmp/.gradle-test";
+			$TEST_DIR="/tmp/gradle-test";
 			system("rm -rf $TEST_DIR");
 			@mkdir($TEST_DIR);
 			exec("$android create project -v $plugin -n GradleTest -t android-8 -p $TEST_DIR -g -k com.testfairy.tests.gradle -a MainActivity", $output);
@@ -179,15 +179,18 @@
 
 			$this->assertNotNull($signedUrl, "Could not find signed instrumented file url in debug logs");
 
+
+			$apkFilePath = "${TEST_DIR}/signed.apk";
+
 			// fetch signed apk
-			copy($signedUrl, "${TEST_DIR}/signed.apk");
+			copy($signedUrl, $apkFilePath);
 
 			// make sure app is signed
-			$this->assertSignedByCN("${TEST_DIR}/signed.apk", $time);
-			$this->assertZipAligned("${TEST_DIR}/signed.apk");
+			$this->assertSignedByCN($apkFilePath, $time);
+			$this->assertZipAligned($apkFilePath);
 		}
 
-		// Gradle Wrapper 1.10
+				// Gradle Wrapper 1.10
                 public function testGradleWrapper_1_10_AndroidPlugin_0_10_0() { }
                 public function testGradleWrapper_1_10_AndroidPlugin_0_10_1() { }
                 public function testGradleWrapper_1_10_AndroidPlugin_0_10_2() { }
@@ -236,5 +239,15 @@
                 public function testGradleWrapper_2_2_AndroidPlugin_0_14_4() { }
                 public function testGradleWrapper_2_2_AndroidPlugin_1_0_0() { }
                 public function testGradleWrapper_2_2_AndroidPlugin_1_0_1() { }
+
+                // Gradle Wrapper 2.14
+                public function testGradleWrapper_2_14_AndroidPlugin_1_5_0() { }
+
+                // Gradle Wrapper 2.14.1
+                public function testGradleWrapper_2_14_1_AndroidPlugin_2_1_3() { }
+
+                // Gradle Wrapper 3.2.1 - not supported (yet)
+                // public function testGradleWrapper_3_2_1_AndroidPlugin_2_1_3() { }
+
 	}
 ?>
