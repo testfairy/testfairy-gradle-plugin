@@ -18,7 +18,7 @@ class TestFairyExtension {
 	private Boolean recordOnBackground = false
 	private Boolean uploadProguardMapping = false
 
-	private String serverEndpoint = "https://app.testfairy.com"
+	private String serverEndpoint = "https://upload.testfairy.com"
 
 	TestFairyExtension(Project project) {
 	}	
