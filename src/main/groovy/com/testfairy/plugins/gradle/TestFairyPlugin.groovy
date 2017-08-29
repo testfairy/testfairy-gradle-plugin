@@ -21,57 +21,11 @@ class TestFairyPlugin implements Plugin<Project> {
 
 	private String apiKey
 
-	/// path to Java's jarsigner
-	private String jarSignerPath
-
-	/// path to zipalign
-	private String zipAlignPath
-
-	private void configureJavaTools(Project project) {
-
-		String sdkDirectory = getSdkDirectory(project)
-		SdkEnvironment env = new SdkEnvironment(sdkDirectory)
-
-		jarSignerPath = env.locateJarsigner()
-		if (jarSignerPath == null) {
-			throw new GradleException("Could not locate jarsigner, please update java.home property")
-		}
-
-		zipAlignPath = env.locateZipalign()
-		if (zipAlignPath == null) {
-			throw new GradleException("Could not locate zipalign, please validate 'buildToolsVersion' settings")
-		}
-	}
-
-	private String getSdkDirectory(Project project) {
-		def sdkDir
-
-		Properties properties = new Properties()
-		File localProps = project.rootProject.file('local.properties')
-		if (localProps.exists()) {
-			properties.load(localProps.newDataInputStream())
-			sdkDir = properties.getProperty('sdk.dir')
-		} else {
-			sdkDir = System.getenv('ANDROID_HOME')
-		}
-
-		if (!sdkDir) {
-			throw new ProjectConfigurationException("Cannot find android sdk. Make sure sdk.dir is defined in local.properties or the environment variable ANDROID_HOME is set.", null)
-		}
-
-		return sdkDir.toString()
-	}
-
 	@Override
 	void apply(Project project) {
 
 		// create an extension where the apiKey and such settings reside
 		def extension = project.extensions.create("testfairyConfig", TestFairyExtension, project)
-
-		// configure java tools before even starting
-		configureJavaTools(project)
-		project.logger.debug("Located zipalign at ${zipAlignPath}")
-		project.logger.debug("Located jarsigner at ${jarSignerPath}")
 
 		project.configure(project) {
 			if (it.hasProperty("android")) {
@@ -112,32 +66,6 @@ class TestFairyPlugin implements Plugin<Project> {
 								}
 
 								def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
-								if (variant.isSigningReady() && isApkSigned(apkFilename)) {
-									// apk was previously signed, so we will sign it again
-									project.logger.debug("Signing is ready, and APK was previously signed")
-
-									// first, we need to download the instrumented apk
-									String instrumentedUrl = json.instrumented_url.toString()
-									project.logger.info("Downloading instrumented APK from ${instrumentedUrl}")
-
-									// add API_KEY to download url, needed only in case of Strict Mode
-									instrumentedUrl = instrumentedUrl + "?api_key=" + apiKey
-									project.logger.debug("Added api_key to download url, and is now ${instrumentedUrl}")
-
-									String baseName = FilenameUtils.getBaseName(apkFilename)
-									String tempFilename = FilenameUtils.normalize("${tempDir}/testfairy-${baseName}.apk".toString())
-									project.logger.debug("Downloading instrumented APK onto ${tempFilename}")
-									downloadFile(instrumentedUrl, tempFilename)
-
-									// resign using gradle build settings
-									resignApk(tempFilename, variant.signingConfig)
-
-									// upload the signed apk file back to testfairy
-									json = uploadSignedApk(project, extension, tempFilename)
-									(new File(tempFilename)).delete()
-
-									project.logger.debug("Signed instrumented file is available at: ${json.instrumented_url}")
-								}
 
 								println ""
 								println "Successfully uploaded to TestFairy, build is available at:"
@@ -205,46 +133,6 @@ class TestFairyPlugin implements Plugin<Project> {
 		return null
 	}
 
-	/**
-	 * Get a list of all files inside this APK file.
-	 *
-	 * @param apkFilename
-	 * @return List<String>
-	 */
-	private List<String> getApkFiles(String apkFilename) {
-		List<String> files = new ArrayList<String>()
-
-		ZipFile zf = new ZipFile(apkFilename)
-		Enumeration<? extends ZipEntry> e = zf.entries()
-		while (e.hasMoreElements()) {
-			ZipEntry entry = e.nextElement()
-			String entryName = entry.getName()
-			files.add(entryName)
-		}
-
-		zf.close()
-		return files
-	}
-
-	/**
-	 * Checks if the given APK is signed
-	 *
-	 * @param apkFilename
-	 * @return boolean
-	 */
-	private boolean isApkSigned(String apkFilename) {
-
-		List<String> filenames = getApkFiles(apkFilename)
-		for (String f: filenames) {
-			if (f.startsWith("META-INF/") && f.endsWith("SF")) {
-				// found a signature file, this APK is signed
-				return true
-			}
-		}
-
-		return false
-	}
-
 	private DefaultHttpClient buildHttpClient() {
 		DefaultHttpClient httpClient = new DefaultHttpClient()
 
@@ -285,23 +173,6 @@ class TestFairyPlugin implements Plugin<Project> {
 	}
 
 	/**
-	 * Downloads the entire page at a remote location, onto a local file.
-	 *
-	 * @param url
-	 * @param localFilename
-	 */
-	private void downloadFile(String url, String localFilename) {
-		DefaultHttpClient httpClient = buildHttpClient()
-		HttpGet httpget = new HttpGet(url)
-		HttpResponse response = httpClient.execute(httpget)
-		HttpEntity entity = response.getEntity()
-
-		FileOutputStream fis = new FileOutputStream(localFilename)
-		IOUtils.copy(entity.getContent(), fis)
-		fis.close()
-	}
-
-	/**
 	 * Upload an APK using /api/upload REST service.
 	 *
 	 * @param project
@@ -321,39 +192,15 @@ class TestFairyPlugin implements Plugin<Project> {
 			entity.addPart('changelog', new StringBody(changelog))
 		}
 
-		if(project.hasProperty("testfairyUploadedBy")){
+		if (project.hasProperty("testfairyUploadedBy")){
 			via = " via " + project.property("testfairyUploadedBy")
 		}
 
-		if(!project.hasProperty("instrumentation")){
-			// instrumentation off by default
-			entity.addPart('instrumentation', new StringBody("off"))
-		} else {
-			entity.addPart('instrumentation', new StringBody(project.property("instrumentation")))
-		}
+		// since testfairy gradle plugin 2.0, we no longer support instrumentation
+		entity.addPart('instrumentation', new StringBody("off"))
 
-		return post(url, entity, via)
-	}
-
-	/**
-	 * Upload a signed APK using /api/upload-signed REST service.
-	 *
-	 * @param project
-	 * @param extension
-	 * @param apkFilename
-	 * @return Object parsed json
-	 */
-	private Object uploadSignedApk(Project project, TestFairyExtension extension, String apkFilename) {
-		String serverEndpoint = extension.getServerEndpoint()
-		String url = "${serverEndpoint}/api/upload-signed"
-		String via = ""
-
-		MultipartEntity entity = new MultipartEntity()
-		entity.addPart('api_key', new StringBody(extension.getApiKey()))
-		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
-
+		// sent to testers groups, as defined
 		if (extension.getTestersGroups()) {
-			// if omitted, no emails will be sent to testers
 			entity.addPart('testers-groups', new StringBody(extension.getTestersGroups()))
 		}
 
@@ -362,11 +209,6 @@ class TestFairyPlugin implements Plugin<Project> {
 
 		// add auto-update "on" or "off"
 		entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
-
-
-		if(project.hasProperty("testfairyUploadedBy")){
-			via = " via " + project.property("testfairyUploadedBy")
-		}
 
 		return post(url, entity, via)
 	}
@@ -386,11 +228,6 @@ class TestFairyPlugin implements Plugin<Project> {
 
 		if (mappingFilename != null) {
 			entity.addPart('symbols_file', new FileBody(new File(mappingFilename)))
-		}
-
-		if (extension.getIconWatermark()) {
-			// if omitted, default value is "off"
-			entity.addPart('icon-watermark', new StringBody("on"))
 		}
 
 		if (extension.getVideo()) {
@@ -424,114 +261,6 @@ class TestFairyPlugin implements Plugin<Project> {
 		}
 
 		return entity
-	}
-
-	/**
-	 * Remove all signature files from archive, turning it back to unsigned.
-	 *
-	 * @param apkFilename
-	 * @param outputFilename
-	 */
-	void removeSignature(String apkFilename, String outFilename) {
-
-		ZipArchiveInputStream zais = new ZipArchiveInputStream(new FileInputStream(apkFilename))
-		ZipArchiveOutputStream zaos = new ZipArchiveOutputStream(new FileOutputStream(outFilename))
-		while (true) {
-			ZipArchiveEntry entry = zais.getNextZipEntry()
-			if (entry == null) {
-				break
-			}
-
-			if (entry.getName().startsWith("META-INF/")) {
-				// skip META-INF files
-				continue
-			}
-
-			ZipArchiveEntry zipEntry = new ZipArchiveEntry(entry.getName())
-			if (entry.getMethod() == ZipEntry.STORED) {
-				// when storing files, we need to copy the size and crc ourselves
-				zipEntry.setSize(entry.getSize())
-				zipEntry.setCrc(entry.getCrc())
-			}
-
-			zaos.setMethod(entry.getMethod())
-			zaos.putArchiveEntry(zipEntry)
-			IOUtils.copy(zais, zaos)
-			zaos.closeArchiveEntry()
-		}
-
-		zaos.close()
-		zais.close()
-	}
-
-	/**
-	 * Remove previous signature and sign archive again. Works in-place, overwrites the original apk file.
-	 *
-	 * @param apkFilename
-	 * @param sc
-	 */
-	void resignApk(String apkFilename, sc) {
-
-		// use a temporary file in the same directory as apkFilename
-		String outFilename = apkFilename + ".temp"
-
-		// remove signature onto temp file, sign and zipalign back onto original filename
-		removeSignature(apkFilename, outFilename)
-		signApkFile(outFilename, sc)
-		zipAlignFile(outFilename, apkFilename)
-		(new File(outFilename)).delete()
-
-		// make sure everything is still intact
-		validateApkSignature(apkFilename)
-	}
-
-	/**
-	 * Sign an APK file with the given signingConfig settings.
-	 *
-	 * @param apkFilename
-	 * @param sc
-	 */
-	void signApkFile(String apkFilename, sc) {
-		def command = [jarSignerPath, "-keystore", sc.storeFile, "-storepass", sc.storePassword, "-keypass", sc.keyPassword, "-digestalg", "SHA1", "-sigalg", "MD5withRSA", apkFilename, sc.keyAlias]
-		def proc = command.execute()
-		proc.consumeProcessOutput()
-		proc.waitFor()
-		if (proc.exitValue()) {
-			throw new GradleException("Could not jarsign ${apkFilename}, used this command:\n${command}")
-		}
-
-	}
-
-	/**
-	 * Zipaligns input APK file onto outFilename.
-	 *
-	 * @param inFilename
-	 * @param outFilename
-	 */
-	void zipAlignFile(String inFilename, String outFilename) {
-		def command = [zipAlignPath, "-f", "4", inFilename, outFilename]
-		def proc = command.execute()
-		proc.consumeProcessOutput()
-		proc.waitFor()
-		if (proc.exitValue()) {
-			throw new GradleException("Could not zipalign ${inFilename} onto ${outFilename}")
-		}
-	}
-
-	/**
-	 * Verifies that APK is signed properly. Will throw an exception
-	 * if not.
-	 *
-	 * @param apkFilename
-	 */
-	void validateApkSignature(String apkFilename) {
-		def command = [jarSignerPath, "-verify", apkFilename]
-		def proc = command.execute()
-		proc.consumeProcessOutput()
-		proc.waitFor()
-		if (proc.exitValue()) {
-			throw new GradleException("Could not jarsign ${apkFilename}, used this command:\n${command}")
-		}
 	}
 }
 

@@ -10,24 +10,7 @@
 			parent::setup();
 
 			// where is our development maven repository?
-			$this->_projectDir = realpath(__DIR__ . "/../../../..");
-
-			$name = $this->getName();
-			$prefix = "testGradleWrapper_";
-			if (substr($name, 0, strlen($prefix)) == $prefix) {
-				$name = substr($name, strlen($prefix));
-				$p = strpos($name, "_AndroidPlugin_");
-				$wrapperVersion = substr($name, 0, $p);
-				$wrapperVersion = str_replace("_", ".", $wrapperVersion);
-				$pluginVersion = substr($name, $p + strlen("_AndroidPlugin_"));
-				$pluginVersion = str_replace("_", ".", $pluginVersion);
-
-				$this->tryGradle($wrapperVersion, $pluginVersion);
-			}
-		}
-
-		public function tearDown() {
-			parent::tearDown();
+			$this->_projectDir = realpath(__DIR__ . "/../..");
 		}
 
 		/**
@@ -51,20 +34,16 @@
 		 * Automagically add testfairy gradle plugin to the gradle build script.
 		 *
 		 * @param $filename   string     path for build.gradle file being inspected
-		 * @param $useMinify  boolean    should render script with 'minifyEnabled' instead of 'runProguard'?
 		 * @param $keystore   string     path to keystore file used for signing app
 		 */
-		private function fixupBuildGradle($filename, $useMinify, $keystore) {
+		private function fixupBuildGradle($filename, $keystore) {
 			$lines = file($filename, FILE_IGNORE_NEW_LINES);
 			$out = array();
+
 			foreach($lines as $line) {
 
 				if (preg_match("/^\\s*runProguard false/", $line)) {
-					if ($useMinify) {
-						$line = str_replace("runProguard false", "minifyEnabled true", $line);
-					} else {
-						$line = str_replace("runProguard false", "runProguard true", $line);
-					}
+					$line = str_replace("runProguard false", "minifyEnabled true", $line);
 				}
 
 				$out[] = $line;
@@ -75,7 +54,7 @@
 				}
 
 				if (strpos($line, "dependencies {") !== FALSE) {
-					$out[] = "        classpath 'com.testfairy.plugins.gradle:testfairy:1.+'";
+					$out[] = "        classpath 'com.testfairy.plugins.gradle:testfairy:2.+'";
 				}
 
 				if (strpos($line, "apply plugin") !== FALSE) {
@@ -118,12 +97,23 @@
 			return $home;
 		}
 
+		/**
+		 * Asserts that the apk is zipaligned(4)
+		 *
+		 * @param $filename
+		 */
 		private function assertZipaligned($filename) {
 			$home = $this->getAndroidHome();
 			exec("${home}/build-tools/19.1.0/zipalign -c 4 '$filename'", $output, $retval);
 			$this->assertEquals(0, $retval, "APK file was not zipaligned");
 		}
 
+		/**
+		 * Assert that zip is signed by a specific CN
+		 *
+		 * @param $filename
+		 * @param $cn
+		 */
 		private function assertSignedByCN($filename, $cn) {
 			exec("jarsigner -certs -verbose -verify '{$filename}'", $output);
 			$this->assertContains("jar verified.", $output, "Downloaded APK is not signed");
@@ -135,22 +125,21 @@
 			$android = $this->getAndroidHome() . "/tools/android";
 
 			// create an empty project first
-			$TEST_DIR="/tmp/gradle-test";
+			$TEST_DIR = "/tmp/gradle-test";
 			system("rm -rf $TEST_DIR");
-			@mkdir($TEST_DIR);
-			exec("$android create project -v $plugin -n GradleTest -t android-8 -p $TEST_DIR -g -k com.testfairy.tests.gradle -a MainActivity", $output);
+			system("cp -R " . __DIR__ . "/../sample-android-app/TestApplication $TEST_DIR"); // copy skeleton app
 
-			// create a certificate for this
+			// create a certificate for this project
 			$time = time();
 			$dname = "CN=${time},OU=organizational_unit,O=organization,L=locality,S=state,C=US";
 			system("keytool -genkey -keystore ${TEST_DIR}/random.keystore -alias android_app -keyalg RSA -keysize 2048 -validity 3650 -keypass 'swordfish' -storepass 'swordfish' -dname '$dname' 2>&1");
 
-			$useMinify = ($plugin >= "0.14");
 			$this->changeDistributionUrl("$TEST_DIR/gradle/wrapper/gradle-wrapper.properties", $wrapper);
-			$this->fixupBuildGradle("$TEST_DIR/build.gradle", $useMinify, "random.keystore");
+			$this->fixupBuildGradle("$TEST_DIR/build.gradle", "random.keystore");
 
 			// check plugin loaded successfully
 			exec("cd $TEST_DIR; bash gradlew tasks", $output);
+print_r($output); exit;
 			$this->assertContains("testfairyRelease - Uploads the Release build to TestFairy", $output);
 			$this->assertContains("testfairyDebug - Uploads the Debug build to TestFairy", $output);
 
@@ -190,10 +179,8 @@
 			$this->assertZipAligned($apkFilePath);
 		}
 
-                // Gradle Wrapper 2.14
-                public function testGradleWrapper_2_14_AndroidPlugin_1_5_0() { }
-
-                // Gradle Wrapper 2.14.1
-                public function testGradleWrapper_2_14_1_AndroidPlugin_2_1_3() { }
+                public function testAndroidPlugin_2_3_0() { 
+			$this->tryGradle("3.3", "2.3.0");
+		}
 	}
 

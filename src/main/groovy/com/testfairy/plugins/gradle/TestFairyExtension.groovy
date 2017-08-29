@@ -5,7 +5,6 @@ import org.gradle.api.*
 class TestFairyExtension {
 
 	private String apiKey
-	private Boolean iconWatermark = false
 	private String video = "on"
 	private String videoQuality = "high"
 	private String videoRate = "1.0"
@@ -29,14 +28,6 @@ class TestFairyExtension {
 
 	String getApiKey() {
 		return apiKey
-	}
-
-	void iconWatermark(Boolean watermark) {
-		this.iconWatermark = watermark
-	}
-
-	Boolean getIconWatermark() {
-		return iconWatermark
 	}
 
 	void video(String video) {
