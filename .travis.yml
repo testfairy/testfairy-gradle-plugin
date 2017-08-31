@@ -1,4 +1,5 @@
 language: android
+sudo: false
 
 branches:
   only:
@@ -14,4 +15,5 @@ android:
 
 script:
   - bash gradlew uploadArchives
+  - (cd example/TestApplication; sh gradlew testfairyRelease)
 
