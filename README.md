@@ -1,4 +1,4 @@
-TestFairy Gradle Plugin [![Build Status](https://travis-ci.org/testfairy/testfairy-gradle-plugin.svg?branch=master)](https://travis-ci.org/testfairy/testfairy-gradle-plugin)
+TestFairy Gradle Plugin [![Build Status](https://travis-ci.org/testfairy/testfairy-gradle-plugin.svg?branch=master)](https://travis-ci.org/testfairy/testfairy-gradle-plugin) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 -------------------
 
 This plugin integrates TestFairy platform with the Gradle build system. With this plugin, you can upload signed builds directly via command line, IntelliJ, Android Studio and other IDEs.
@@ -30,7 +30,7 @@ testfairyConfig {
 }
 ```
 
-**NOTE:** Your TestFairy API key is in your [account settings](https://app.testfairy.com/settings#apikey))
+**NOTE:** Your TestFairy API key is in your [account settings](https://app.testfairy.com/settings#apikey)
      
 Usage
 -----
