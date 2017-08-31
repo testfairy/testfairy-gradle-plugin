@@ -25,9 +25,9 @@ buildscript {
 }
 
 testfairyConfig {
-        testfairyConfig {
-            apiKey "1234567890abcdef"
-        }
+    apiKey "1234567890abcdef"
+    uploadProguardMapping true    
+}
 ```
 
 **NOTE:** Your TestFairy API key is in your [account settings](https://app.testfairy.com/settings#apikey))
@@ -48,26 +48,18 @@ Optionally, you can add a *changelog* to this build. This changelog will appear 
 Additional Parameters
 ---------------------
 
-By default, the Gradle plugin will record all metrics, of highest quality video at 1 frames per second. However, all of these are available through build.gradle configuration. Please consider the following example:
+This Gradle plugin uploads APK artifacts to TestFairy for distribution. We strongly suggest you also integrate the TestFairy SDK. Additional parameters control the default behavior of newly uploaded builds:
 
-        testfairyConfig {
-            metrics "cpu,memory,network,logcat"
-            video "wifi"
-            videoRate "0.5"
-            videoQuality "low"
-            maxDuration "15m"
-            recordOnBackground true
-            iconWatermark true
-            testersGroups "dev,qa,friends"
-            notify true
-            maxDuration "1h"
-            autoUpdate true
-            uploadProguardMapping true
-    }
-    
-The example above will make sure TestFairy records a low quality video, at a frame every 2 seconds, only if wifi is available. Max session duration for video is 15 minutes, and only cpu, memory, network and logcat metrics are recorded. And watermark will be added to the icon to distinguish TestFairy builds. Previous builds will be automatically updated to latest versions and recorded sessions are capped at 1 hour. Some testers will be invited automatically, and notifications will be sent by email.
-
-For more details about parameter values, see [this](http://docs.testfairy.com/Upload_API.html).
+| Property      | Description |
+|---------------|-------------|
+| apiKey        | API key used for uploading |
+| video         | Should record video? Values: on/off/wifi (default: on) |
+| videoQuality  | Image quality of video. Values: high/medium/low (default: medium) |
+| testersGroups | Comma seperated list of testers-groups to invite |
+| notify        | Should send emails to these testers? Values: true/false (default: true) |
+| comment       | Comment text to attach to emails sent to testers |
+| autoUpdate    | Display and enable auto update for testers using older versions? Values: true/false (default: false) |
+| recordOnBackground | Should record metrics even if app is in background (Android only)? Values: true/false (default: false) |
 
 Using a Web Proxy
 --------------------------------
