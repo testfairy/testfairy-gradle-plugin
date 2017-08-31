@@ -23,7 +23,7 @@ apply plugin: 'testfairy'
 buildscript {
 	repositories {
 		jcenter()
-        	maven { url '../../../../repo' }
+        	maven { url '../../../repo' }
 	}
 
 	dependencies {
