@@ -6,7 +6,7 @@ class TestFairyExtension {
 
 	private String apiKey
 	private String video = "on"
-	private String videoQuality = "high"
+	private String videoQuality = "medium"
 	private String videoRate = "1.0"
 	private String testersGroups
 	private String maxDuration

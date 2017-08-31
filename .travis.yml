@@ -5,25 +5,13 @@ branches:
     - master
     
 jdk:
-  - oraclejdk7
   - openjdk7
   
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install php5 
-  - curl -sS https://getcomposer.org/installer | php
-  - sudo mv composer.phar /usr/bin/composer
-
-install:
-  - composer install --no-interaction
-
 android:
   components:
-    - build-tools-19.0.0
-    - build-tools-19.1.0
-    - android-19
+    - android-25
+    - build-tools-25.0.2
 
 script:
   - bash gradlew uploadArchives
-  - ./vendor/bin/phpunit tests/gradle-uploader
 
