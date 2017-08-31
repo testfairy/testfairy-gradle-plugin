@@ -51,7 +51,8 @@ class TestFairyPlugin implements Plugin<Project> {
 		if (localProps.exists()) {
 			properties.load(localProps.newDataInputStream())
 			sdkDir = properties.getProperty('sdk.dir')
-		} else {
+		} 
+		if (!sdkDir) {
 			sdkDir = System.getenv('ANDROID_HOME')
 		}
 
