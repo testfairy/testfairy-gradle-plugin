@@ -13,6 +13,8 @@ class TestFairyExtension {
 	private String maxDuration
 	private String metrics
 	private String comment
+	private String digestAlg = "SHA1"
+	private String sigAlg = "MD5withRSA"
 	private Boolean notify = true
 	private Boolean autoUpdate = false
 	private Boolean recordOnBackground = false
@@ -89,6 +91,22 @@ class TestFairyExtension {
 
 	void comment(String value) {
 		this.comment = value
+	}
+
+	String getDigestAlg() {
+		return digestAlg;
+	}
+
+	void digestAlg(String value) {
+		this.digestAlg = value;
+	}
+
+	String getSigAlg() {
+		return sigAlg;
+	}
+
+	void sigAlg(String value) {
+		this.sigAlg = value;
 	}
 
 	String getComment() {
