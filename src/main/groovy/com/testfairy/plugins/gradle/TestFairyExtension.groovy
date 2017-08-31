@@ -103,27 +103,27 @@ class TestFairyExtension {
 	}
 
 	void autoUpdate(Boolean value) {
-		this.autoUpdate = value;
+		this.autoUpdate = value
 	}
 
 	Boolean getAutoUpdate() {
-		return autoUpdate;
+		return autoUpdate
 	}
 
 	void recordOnBackground(Boolean value) {
-		this.recordOnBackground = value;
+		this.recordOnBackground = value
 	}
 
 	Boolean getRecordOnBackground() {
-		return recordOnBackground;
+		return recordOnBackground
 	}
 
-    void uploadProguardMapping(Boolean value){
-        this.uploadProguardMapping = value;
-    }
+	void uploadProguardMapping(Boolean value) {
+		this.uploadProguardMapping = value
+	}
 
-    Boolean getUploadProguardMapping(){
-        return uploadProguardMapping;
-    }
+	Boolean getUploadProguardMapping() {
+		return uploadProguardMapping
+	}
 }
 
