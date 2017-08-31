@@ -13,6 +13,7 @@ class TestFairyExtension {
 	private String maxDuration
 	private String metrics
 	private String comment
+	private String commentFilePath
 	private Boolean notify = true
 	private Boolean autoUpdate = false
 	private Boolean recordOnBackground = false
@@ -91,8 +92,16 @@ class TestFairyExtension {
 		this.comment = value
 	}
 
+	void commentFilePath(String value) {
+		this.commentFilePath = value
+	}
+
 	String getComment() {
 		return comment
+	}
+
+	String getCommentFilePath() {
+		return commentFilePath
 	}
 
 	void serverEndpoint(String value) {
