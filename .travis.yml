@@ -15,5 +15,5 @@ android:
 
 script:
   - bash gradlew uploadArchives
-  - (cd example/TestApplication; sh gradlew testfairyRelease)
+  - cd example/TestApplication; sh gradlew testfairyRelease
 

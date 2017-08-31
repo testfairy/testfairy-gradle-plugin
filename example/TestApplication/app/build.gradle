@@ -10,6 +10,7 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -21,18 +22,18 @@ android {
 apply plugin: 'testfairy'
 
 buildscript {
-	repositories {
-		jcenter()
-        	maven { url '../../../repo' }
-	}
+    repositories {
+        jcenter()
+        maven { url '../../../repo' }
+    }
 
-	dependencies {
-		classpath 'com.testfairy.plugins.gradle:testfairy:2.+'
-	}
+    dependencies {
+        classpath 'com.testfairy.plugins.gradle:testfairy:2.+'
+    }
 }
 
 testfairyConfig {
-	apiKey "9dc08e8d93efd8622178f0c61faeaf112fbafcb4"
+    apiKey "9dc08e8d93efd8622178f0c61faeaf112fbafcb4"
 }
 
 dependencies {
