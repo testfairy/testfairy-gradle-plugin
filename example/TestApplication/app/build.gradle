@@ -30,6 +30,7 @@ buildscript {
     repositories {
         jcenter()
         maven { url '../../../repo' }
+        //maven { url 'https://www.testfairy.com/maven' }
     }
 
     dependencies {
@@ -39,9 +40,19 @@ buildscript {
 
 testfairyConfig {
     apiKey "9dc08e8d93efd8622178f0c61faeaf112fbafcb4"
+    testersGroups "myself"
+    notify true
+    video "wifi"
+    videoQuality "low"
+    videoRate "2.0"
+    recordOnBackground true
+    serverEndpoint "https://megidish.testfairy.com"
+    maxDuration "32m"
+    comment "Woowah"
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'testfairy:testfairy-android-sdk:1.+@aar'
 }
