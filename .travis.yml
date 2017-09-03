@@ -6,7 +6,7 @@ branches:
     - master
     
 jdk:
-  - openjdk7
+  - openjdk8
   
 android:
   components:
