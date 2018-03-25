@@ -57,7 +57,6 @@ This Gradle plugin uploads APK artifacts to TestFairy for distribution. We stron
 | videoQuality  | Image quality of video. Values: high/medium/low (default: medium) |
 | testersGroups | Comma seperated list of testers-groups to invite |
 | notify        | Should send emails to these testers? Values: true/false (default: true) |
-| comment       | Comment text to attach to emails sent to testers |
 | autoUpdate    | Display and enable auto update for testers using older versions? Values: true/false (default: false) |
 | recordOnBackground | Should record metrics even if app is in background (Android only)? Values: true/false (default: false) |
 
