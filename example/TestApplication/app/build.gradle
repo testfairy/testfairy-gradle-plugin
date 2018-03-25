@@ -29,8 +29,8 @@ apply plugin: 'testfairy'
 buildscript {
     repositories {
         jcenter()
-        maven { url '../../../repo' }
-        //maven { url 'https://www.testfairy.com/maven' }
+        //maven { url '../../../repo' }
+        maven { url 'https://www.testfairy.com/maven' }
     }
 
     dependencies {
@@ -46,9 +46,8 @@ testfairyConfig {
     videoQuality "low"
     videoRate "2.0"
     recordOnBackground true
-    serverEndpoint "https://megidish.testfairy.com"
+    serverEndpoint "https://app.testfairy.com"
     maxDuration "32m"
-    comment "Woowah"
 }
 
 dependencies {
