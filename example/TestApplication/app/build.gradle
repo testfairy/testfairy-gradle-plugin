@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
     defaultConfig {
         applicationId "com.example.testapplication"
         minSdkVersion 19
-        targetSdkVersion 25
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
     }
@@ -29,17 +29,19 @@ apply plugin: 'testfairy'
 buildscript {
     repositories {
         jcenter()
-        //maven { url '../../../repo' }
-        maven { url 'https://www.testfairy.com/maven' }
+        google()
+        maven { url '../../../../repo' }
+//        maven { url 'https://www.testfairy.com/maven' }
     }
 
     dependencies {
-        classpath 'com.testfairy.plugins.gradle:testfairy:2.+'
+        classpath 'com.testfairy.plugins.gradle:testfairy:3.+'
     }
 }
 
 testfairyConfig {
     apiKey "9dc08e8d93efd8622178f0c61faeaf112fbafcb4"
+//    apiKey "ae6edb30a71f825093216f851a9bf414984cb131"
     testersGroups "myself"
     notify true
     video "wifi"
