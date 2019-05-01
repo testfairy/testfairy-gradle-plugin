@@ -40,7 +40,7 @@ buildscript {
 }
 
 testfairyConfig {
-    apiKey "9dc08e8d93efd8622178f0c61faeaf112fbafcb4"
+    apiKey "ae6edb30a71f825093216f851a9bf414984cb131"
     testersGroups "myself"
     notify true
     video "wifi"
