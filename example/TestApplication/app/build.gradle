@@ -30,8 +30,12 @@ buildscript {
     repositories {
         jcenter()
         google()
-        maven { url '../../../../testfairy-maven' }
-//        maven { url 'https://www.testfairy.com/maven' }
+
+        //Enable when testing local plugin
+//        maven { url '../../../../testfairy-maven' }
+
+        //Enable when testing remote release
+        maven { url 'https://www.testfairy.com/maven' }
     }
 
     dependencies {
@@ -52,7 +56,7 @@ testfairyConfig {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'testfairy:testfairy-android-sdk:1.+@aar'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation 'testfairy:testfairy-android-sdk:1.+@aar'
 }
