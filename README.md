@@ -20,7 +20,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.testfairy.plugins.gradle:testfairy:2.+'
+        classpath 'com.testfairy.plugins.gradle:testfairy:3.+'
     }
 }
 
@@ -78,19 +78,31 @@ This plugin is also Android Studio and Intellij-friendly. To upload builds direc
 
  ![Add new Gradle configuration screenshot][2]
 
+<a name="migrate_2x"></a>
+Migrating from 2.x to 3.x
+----
+
+Version 3.0 deprecated the support for gradle plugins older than 3.4 and Android Studio build tools older than 5.1.1.
+
+To migrate, simply upgrade those dependencies in your module's build.gradle and gradle-wrapper.properties files.
+
+
 <a name="migrate_1x"></a>
 Migrating from 1.x to 2.x
 ----
 
 Version 2.0 deprecated the support for instrumentation. Please use the [TestFairy SDK](https://docs.testfairy.com/Android/Integrating_Android_SDK.html) to record sessions, auto-update versions, and handle crashes. 
 
-To migrating, simply re-integrate the plugin into your module's build.gradle file.
+To migrate, simply re-integrate the plugin into your module's build.gradle file.
 
 - *iconWatermark* has been removed
 
 Changelog
 ----
 
+3.0 (2019-05-20)
+  - Added support for latest Gradle and Android Plugin (3.4+ and 5.1.1+ respectively)
+  
 2.0 (2017-09-01)
   - Added support for latest Gradle and Android Plugin
   - Added support for Android Studio 3
