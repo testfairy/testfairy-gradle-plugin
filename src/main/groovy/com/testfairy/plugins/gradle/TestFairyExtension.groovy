@@ -1,6 +1,6 @@
 package com.testfairy.plugins.gradle
 
-import org.gradle.api.*
+import org.gradle.api.Project
 
 class TestFairyExtension {
 

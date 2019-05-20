@@ -1,24 +1,26 @@
 package com.testfairy.plugins.gradle
 
-import com.testfairy.uploader.*
-
-import org.gradle.api.*
-import java.util.zip.*
-import org.apache.http.*
-import org.apache.http.auth.*
-import org.apache.http.impl.client.*
-import org.apache.http.client.methods.*
-import org.apache.http.entity.mime.*
-import org.apache.http.entity.mime.content.*
-import org.apache.http.util.EntityUtils
-import org.apache.http.conn.params.ConnRoutePNames
-import org.apache.commons.io.IOUtils
-import org.apache.commons.io.FilenameUtils
-import org.apache.commons.compress.archivers.zip.*
-import groovy.json.JsonSlurper
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
 import com.android.build.gradle.api.ApplicationVariant
+import groovy.json.JsonSlurper
+import org.apache.http.HttpHost
+import org.apache.http.HttpResponse
+import org.apache.http.auth.AuthScope
+import org.apache.http.auth.Credentials
+import org.apache.http.auth.UsernamePasswordCredentials
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.conn.params.ConnRoutePNames
+import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.entity.mime.content.FileBody
+import org.apache.http.entity.mime.content.StringBody
+import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.util.EntityUtils
+
+//import com.testfairy.uploader.*
+
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.Project
+import org.gradle.api.tasks.TaskAction
 
 class TestFairyUploadTask extends DefaultTask {
 
@@ -107,7 +109,7 @@ class TestFairyUploadTask extends DefaultTask {
 		String json = EntityUtils.toString(response.getEntity())
 		def parser = new JsonSlurper()
 		def parsed = parser.parseText(json)
-		if (!parsed.status.equals("ok")) {
+		if (parsed.status != "ok") {
 			throw new GradleException("Failed with json: " + json)
 		}
 

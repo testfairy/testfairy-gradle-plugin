@@ -1,25 +1,13 @@
 package com.testfairy.plugins.gradle
 
-import com.testfairy.uploader.*
-
-import org.gradle.api.*
-import java.util.zip.*
-import org.apache.http.*
-import org.apache.http.auth.*
-import org.apache.http.impl.client.*
-import org.apache.http.client.methods.*
-import org.apache.http.entity.mime.*
-import org.apache.http.entity.mime.content.*
-import org.apache.http.util.EntityUtils
-import org.apache.http.conn.params.ConnRoutePNames
-import org.apache.commons.io.IOUtils
-import org.apache.commons.io.FilenameUtils
-import org.apache.commons.compress.archivers.zip.*
-import groovy.json.JsonSlurper
-
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.api.ApplicationVariant
+
+//import com.testfairy.uploader.*
+
+import org.gradle.api.Plugin
+import org.gradle.api.Project
 
 class TestFairyPlugin implements Plugin<Project> {
 
