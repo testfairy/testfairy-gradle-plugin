@@ -30,7 +30,7 @@ buildscript {
     repositories {
         jcenter()
         google()
-        maven { url '../../../../repo' }
+        maven { url '../../../../testfairy-maven' }
 //        maven { url 'https://www.testfairy.com/maven' }
     }
 

@@ -32,7 +32,7 @@ uploadArchives {
 	repositories {
 		mavenDeployer {
 //			repository(url: uri('repo'))
-			repository(url: uri('../repo'))
+			repository(url: uri('../testfairy-maven'))
 
 			pom.project {
 				name 'TestFairy Uploader Plugin for Gradle'
@@ -46,7 +46,7 @@ uploadArchives {
 						url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
 						distribution 'repo'
 					}
-                		}
+				}
 
 				scm {
 					url "https://github.com/testfairy/testfairy-gradle-plugin.git"
