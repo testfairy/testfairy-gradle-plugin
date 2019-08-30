@@ -1,3 +1,5 @@
+Fork adds support for Gradle 5.4.1 and Android Gradle plugin 3.5.0
+
 TestFairy Gradle Plugin [![Build Status](https://travis-ci.org/testfairy/testfairy-gradle-plugin.svg?branch=master)](https://travis-ci.org/testfairy/testfairy-gradle-plugin) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 -------------------
 
