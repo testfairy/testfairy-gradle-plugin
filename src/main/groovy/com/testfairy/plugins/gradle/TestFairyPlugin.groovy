@@ -29,7 +29,7 @@ class TestFairyPlugin implements Plugin<Project> {
 				task.applicationVariant = variant
 				task.extension = extension
 				task.outputs.upToDateWhen { false }
-				task.dependsOn variant.assemble
+				task.dependsOn variant.assembleProvider
 			}
 		}
 	}
