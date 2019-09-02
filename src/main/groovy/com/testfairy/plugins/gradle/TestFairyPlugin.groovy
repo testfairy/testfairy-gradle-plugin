@@ -23,13 +23,14 @@ class TestFairyPlugin implements Plugin<Project> {
 
 			AppExtension android = project.android
 			android.applicationVariants.all { ApplicationVariant variant ->
-				TestFairyUploadTask task = project.tasks.create("testfairy${variant.name.capitalize()}", TestFairyUploadTask)
+				TaskProvider<TestFairyUploadTask> taskProvider = project.tasks.register("testfairy${variant.name.capitalize()}", TestFairyUploadTask)
+				TestFairyUploadTask task = taskProvider.get()
 				task.group = "TestFairy"
 				task.description = "Upload '${variant.name}' to TestFairy"
 				task.applicationVariant = variant
 				task.extension = extension
 				task.outputs.upToDateWhen { false }
-				task.dependsOn variant.assemble
+				task.dependsOn variant.assembleProvider
 			}
 		}
 	}
