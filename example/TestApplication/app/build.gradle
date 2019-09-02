@@ -32,10 +32,10 @@ buildscript {
         google()
 
         //Enable when testing local plugin
-//        maven { url '../../../../testfairy-maven' }
+        maven { url '../../../../testfairy-maven' }
 
         //Enable when testing remote release
-        maven { url 'https://www.testfairy.com/maven' }
+//        maven { url 'https://www.testfairy.com/maven' }
     }
 
     dependencies {
