@@ -11,9 +11,6 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 
 class TestFairyPlugin implements Plugin<Project> {
-
-	private String apiKey
-
 	@Override
 	void apply(Project project) {
 
@@ -24,6 +21,7 @@ class TestFairyPlugin implements Plugin<Project> {
 
 			AppExtension android = project.android
 			android.applicationVariants.all { ApplicationVariant variant ->
+				// Upload APK task
 				TaskProvider<TestFairyUploadTask> taskProvider = project.tasks.register("testfairy${variant.name.capitalize()}", TestFairyUploadTask)
 				TestFairyUploadTask task = taskProvider.get()
 				task.group = "TestFairy"
@@ -32,6 +30,8 @@ class TestFairyPlugin implements Plugin<Project> {
 				task.extension = extension
 				task.outputs.upToDateWhen { false }
 				task.dependsOn variant.assembleProvider
+
+				// TODO : register upload symbols task
 			}
 		}
 	}

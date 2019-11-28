@@ -7,8 +7,9 @@ import org.gradle.api.Project
 
 import org.gradle.api.tasks.TaskAction
 
-class TestFairyUploadTask extends TestFairyTask {
+class TestFairySymbolTask extends TestFairyTask {
 
+    // TODO : navigate build artifacts
     @TaskAction
     def upload() throws IOException {
         assertValidApiKey(extension)
@@ -36,7 +37,7 @@ class TestFairyUploadTask extends TestFairyTask {
             project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
         }
 
-        def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
+        def json = uploadSymbols(project, extension, apkFilename, proguardMappingFilename)
 
         println ""
         println "Successfully uploaded to TestFairy, build is available at:"
@@ -51,7 +52,7 @@ class TestFairyUploadTask extends TestFairyTask {
      * @param apkFilename
      * @return Object parsed json
      */
-    private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
+    private Object uploadSymbols(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
         String serverEndpoint = extension.getServerEndpoint()
         String url = "${serverEndpoint}/api/upload"
         MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
