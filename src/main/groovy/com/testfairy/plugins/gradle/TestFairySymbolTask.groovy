@@ -48,7 +48,8 @@ class TestFairySymbolTask extends TestFairyTask {
 
 			debugLog "Zippable folders: " + zippableFolders.toString()
 
-//			post(url, entity, via)
+			def json = post(url, entity, via)
+			project.logger.info("Upload " + zip.name + " : " + json.status)
 		}
 	}
 
