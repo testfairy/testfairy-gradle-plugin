@@ -51,7 +51,7 @@ class TestFairyUploadTask extends TestFairyTask {
      * @param apkFilename
      * @return Object parsed json
      */
-    private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
+    private def uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
         String serverEndpoint = extension.getServerEndpoint()
         String url = "${serverEndpoint}/api/upload"
         MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
@@ -91,7 +91,7 @@ class TestFairyUploadTask extends TestFairyTask {
      * @return MultipartEntity
      */
     @SuppressWarnings("GrDeprecatedAPIUsage")
-    private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
+    private static def buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
         String apiKey = extension.getApiKey()
 
         MultipartEntity entity = new MultipartEntity()

@@ -1,139 +1,266 @@
 package com.testfairy.plugins.gradle
 
+import com.android.utils.FileUtils
 import org.apache.http.entity.mime.MultipartEntity
 import org.apache.http.entity.mime.content.FileBody
 import org.apache.http.entity.mime.content.StringBody
 import org.gradle.api.Project
-
 import org.gradle.api.tasks.TaskAction
 
 class TestFairySymbolTask extends TestFairyTask {
 
-    // TODO : navigate build artifacts
-    @TaskAction
-    def upload() throws IOException {
-        assertValidApiKey(extension)
+	@TaskAction
+	def upload() throws IOException {
+		assertValidApiKey(extension)
 
-        String serverEndpoint = extension.getServerEndpoint()
+		String serverEndpoint = extension.getServerEndpoint()
 
-        // use outputFile from packageApp task
-        String apkFilename = null
-        applicationVariant.outputs.each {
-            if (it.outputFile.exists()) {
-                String filename = it.outputFile.toString()
-                if (filename.endsWith(".apk")) {
-                    apkFilename = filename
-                }
-            }
-        }
+		project.logger.info("Uploading symbols to TestFairy on server ${serverEndpoint}")
 
-        project.logger.info("Uploading ${apkFilename} to TestFairy on server ${serverEndpoint}")
+		uploadSymbols(project, extension)
 
-        String proguardMappingFilename = null
-        if (extension.uploadProguardMapping && applicationVariant.getMappingFile()?.exists()) {
-            // proguard-mapping.txt upload is enabled and mapping found
+		project.logger.info("Symbols successfully uploaded to TestFairy")
+	}
 
-            proguardMappingFilename = applicationVariant.getMappingFile().toString()
-            project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
-        }
+	/**
+	 * Upload an APK using /api/upload REST service.
+	 *
+	 * @param project
+	 * @param extension
+	 * @param apkFilename
+	 * @return Object parsed json
+	 */
+	private def uploadSymbols(Project project, TestFairyExtension extension) {
+		String serverEndpoint = extension.getServerEndpoint()
+		String url = "${serverEndpoint}/api/upload"
 
-        def json = uploadSymbols(project, extension, apkFilename, proguardMappingFilename)
+		def objFolders = getFoldersContainingSymbols(project)
+		def zippableFolders = copyObjFoldersToTemp(project, objFolders)
+		def zips = Zip.createZips(zippableFolders)
 
-        println ""
-        println "Successfully uploaded to TestFairy, build is available at:"
-        println json.build_url
-    }
+		for (File zip : zips) {
+			MultipartEntity entity = buildEntity(extension, zip)
+			String via = ""
 
-    /**
-     * Upload an APK using /api/upload REST service.
-     *
-     * @param project
-     * @param extension
-     * @param apkFilename
-     * @return Object parsed json
-     */
-    private Object uploadSymbols(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
-        String serverEndpoint = extension.getServerEndpoint()
-        String url = "${serverEndpoint}/api/upload"
-        MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
-        String via = ""
+			if (project.hasProperty("testfairyUploadedBy")) {
+				via = " via " + project.property("testfairyUploadedBy")
+			}
 
-        if (project.hasProperty("testfairyChangelog")) {
-            // optional: testfairyChangelog, as passed through -P
-            String changelog = project.property("testfairyChangelog")
-            entity.addPart('changelog', new StringBody(changelog))
-        }
+			debugLog "Zippable folders: " + zippableFolders.toString()
 
-        if (project.hasProperty("testfairyUploadedBy")) {
-            via = " via " + project.property("testfairyUploadedBy")
-        }
+//			post(url, entity, via)
+		}
+	}
 
-        // since testfairy gradle plugin 2.0, we no longer support instrumentation
-        entity.addPart('instrumentation', new StringBody("off"))
+	/**
+	 * Build MultipartEntity for API parameters on Upload of an APK
+	 *
+	 * @param extension
+	 * @return MultipartEntity
+	 */
+	@SuppressWarnings("GrDeprecatedAPIUsage")
+	private static def buildEntity(TestFairyExtension extension, File zipFile) {
+		String apiKey = extension.getApiKey()
 
-        // send to testers groups, as defined
-        if (extension.getTestersGroups()) {
-            entity.addPart('testers-groups', new StringBody(extension.getTestersGroups()))
-        }
+		MultipartEntity entity = new MultipartEntity()
+		entity.addPart('api_key', new StringBody(apiKey))
+		entity.addPart('ndk_symbols_file', new FileBody(zipFile))
 
-        // add notify "on" or "off"
-        entity.addPart('notify', new StringBody(extension.getNotify() ? "on" : "off"))
+		return entity
+	}
 
-        // add auto-update "on" or "off"
-        entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
+	/**
+	 * Returns symbol folders for each sub project in the root project.
+	 * @param project
+	 * @return
+	 */
+	private def getFoldersContainingSymbols(Project project) {
+		List<Project> projects = new ArrayList<>()
+		List<File> symbolDirs = new ArrayList<>()
 
-        return post(url, entity, via)
-    }
+		project.rootProject.allprojects { Project p ->
+			projects.add(p)
+		}
 
-    /**
-     * Build MultipartEntity for API parameters on Upload of an APK
-     *
-     * @param extension
-     * @return MultipartEntity
-     */
-    @SuppressWarnings("GrDeprecatedAPIUsage")
-    private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
-        String apiKey = extension.getApiKey()
+		for (Project p : projects) {
+			debugLog "Searching in Project: " + p.name
+			def symbolDir = findSoFiles(p.buildDir, null)
+			debugLog "Found: " + (symbolDir != null ? symbolDir.toString() : "none")
 
-        MultipartEntity entity = new MultipartEntity()
-        entity.addPart('api_key', new StringBody(apiKey))
-        entity.addPart('apk_file', new FileBody(new File(apkFilename)))
+			if (symbolDir != null) {
+				for (File f : symbolDir.keySet()) {
+					symbolDirs.add(f)
+				}
+			}
+		}
 
-        if (mappingFilename != null) {
-            entity.addPart('symbols_file', new FileBody(new File(mappingFilename)))
-        }
+		return (File[]) symbolDirs.toArray()
+	}
 
-        if (extension.getVideo()) {
-            // if omitted, default value is "on"
-            entity.addPart('video', new StringBody(extension.getVideo()))
-        }
+	/**
+	 * Returns a map for each root folder containing SO files. Starts searching from the given file/folder
+	 * and explores recursively in depth first search manner.
+	 *
+	 * The mapping structure will look like this:
+	 *
+	 * {
+	 *     objFolder1: {
+	 *         arch1: [lib1.so, lib2.so, ...],
+	 *         arch2: [lib1.so, lib2.so, ...],
+	 *         ...
+	 *     },
+	 *     objFolder2: {
+	 *         arch1: [lib1.so, lib2.so, ...],
+	 *         arch2: [lib1.so, lib2.so, ...],
+	 *         ...
+	 *     }
+	 *     ...
+	 * }
+	 *
+	 * @param buildDir
+	 * @param outArchSoMapping
+	 * @return
+	 */
+	private def findSoFiles(File currentDirOrFile, Map<File, Map<String, Set<File>>> outArchSoMapping) {
+		String[] archs = Architectures.stringValues()
 
-        if (extension.getVideoQuality()) {
-            // if omitted, default value is "high"
-            entity.addPart('video-quality', new StringBody(extension.getVideoQuality()))
-        }
+		if (outArchSoMapping == null) {
+			outArchSoMapping = new HashMap<>()
+		}
 
-        if (extension.getVideoRate()) {
-            // if omitted, default is 1 frame per second (videoRate = 1.0)
-            entity.addPart('video-rate', new StringBody(extension.getVideoRate()))
-        }
+		if (currentDirOrFile.isDirectory() && !SYMBOL_FOLDERS_BLACKLIST.contains(currentDirOrFile.name)) {
+			for(File f : currentDirOrFile.listFiles()) {
+				debugLog "Searching in " + f.name
 
-        if (extension.getMetrics()) {
-            // if omitted, by default will record as much as possible
-            entity.addPart('metrics', new StringBody(extension.getMetrics()))
-        }
+				if (!SYMBOL_FOLDERS_BLACKLIST.contains(f.name)) {
+					outArchSoMapping = findSoFiles(f, outArchSoMapping)
+				}
+			}
+		} else if (!currentDirOrFile.isDirectory() && currentDirOrFile.name.startsWith("lib") && currentDirOrFile.name.endsWith(".so")) {
+			debugLog "File: " + currentDirOrFile.name
+			debugLog "Parent File: " + currentDirOrFile.parentFile.name
+			debugLog "Parent Parent File: " + currentDirOrFile.parentFile.parentFile.name
 
-        if (extension.getMaxDuration()) {
-            // override default value
-            entity.addPart('max-duration', new StringBody(extension.getMaxDuration()))
-        }
+			if (currentDirOrFile.parentFile.parentFile.parentFile.name == applicationVariant.dirName &&
+					archs.contains(currentDirOrFile.parentFile.name) && (
+					currentDirOrFile.parentFile.parentFile.name == "obj" ||
+							currentDirOrFile.parentFile.parentFile.name == "local"
+			)
+			) {
+				def soFile = currentDirOrFile
+				def archFolder = currentDirOrFile.parentFile
+				def objFolder = currentDirOrFile.parentFile.parentFile
 
-        if (extension.getRecordOnBackground()) {
-            // enable record on background option
-            entity.addPart('record-on-background', new StringBody("on"))
-        }
+				debugLog "Processing " + soFile.name + " - " + archFolder.name  + " - " + objFolder.name
 
-        return entity
-    }
+				if (!outArchSoMapping.containsKey(objFolder)) {
+					outArchSoMapping.put(objFolder, new HashMap<String, Set<File>>())
+				}
+
+				def archSoMapping = outArchSoMapping.get(objFolder)
+
+				if (!archSoMapping.containsKey(archFolder.name)) {
+					archSoMapping.put(archFolder.name, new HashSet<File>())
+				}
+
+				def soSetForArch = archSoMapping.get(archFolder.name)
+
+				soSetForArch.add(soFile)
+				for (File so : soSetForArch) {
+					if (so.name == soFile.name && so != soFile) {
+						if (so.size() > soFile.size()) {
+							soSetForArch.remove(soFile)
+						} else {
+							soSetForArch.remove(so)
+						}
+					}
+				}
+			}
+		}
+
+		return outArchSoMapping
+	}
+
+	/**
+	 * Copies given symbol folders to a temporary, safe location for zipping.
+	 * @param project
+	 * @param objFolders
+	 * @return
+	 */
+	private def copyObjFoldersToTemp(Project project, File[] objFolders) {
+		File testfairyFolder = new File(project.rootProject.buildDir.path + "/intermediates/testfairy/symbols")
+
+		if (testfairyFolder.exists()) {
+			deleteFolder(testfairyFolder)
+		}
+
+		testfairyFolder.mkdirs()
+
+		List<File> zippableFolders = new ArrayList<>()
+		for (int i = 0; i < objFolders.length; i++) {
+			File tempFolder = new File(testfairyFolder.path + "/" + i + "/obj")
+			tempFolder.mkdir()
+
+			FileUtils.copyDirectory(objFolders[i], tempFolder)
+			zippableFolders.add(tempFolder)
+		}
+
+		return (File[]) zippableFolders.toArray()
+	}
+
+	/**
+	 * Deletes given folder recursively like `rm -rf`.
+	 * @param folderToBeDeleted
+	 * @return
+	 */
+	private def deleteFolder(File folderToBeDeleted) {
+		File[] allContents = folderToBeDeleted.listFiles()
+		if (allContents != null) {
+			for (File file : allContents) {
+				deleteFolder(file)
+			}
+		}
+		return folderToBeDeleted.delete()
+	}
+
+	private def debugLog(String msg) {
+//		println msg
+	}
+
+	private static final enum Architectures {
+		ARM64V8A("arm64-v8a"),
+		ARMABIV7A("armeabi-v7a"),
+		X86("x86"),
+		x86_64("x86_64");
+
+		private final String folderName
+
+		Architectures(String folderName) {
+			this.folderName = folderName
+		}
+
+		static String[] stringValues() {
+			List<String> strings = new ArrayList<>()
+
+			for (Architectures a : values()) {
+				strings.add(a.toString())
+			}
+
+			return strings
+		}
+
+		@Override
+		String toString() {
+			return folderName
+		}
+	}
+
+	private static final String[] SYMBOL_FOLDERS_BLACKLIST = [
+			"merged_jni_libs",
+			"merged_native_libs",
+			"merged_shaders",
+			"stripped_native_libs",
+			"intermediate-jars"
+	]
 }
 
