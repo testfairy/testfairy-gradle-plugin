@@ -99,7 +99,7 @@ To migrate, simply re-integrate the plugin into your module's build.gradle file.
 
 Changelog
 ----
-3.2 (TODO)
+3.2 (2019-12-05)
   - Added a new task to upload NDK symbols to TestFairy.
 
 3.0 (2019-05-20)
