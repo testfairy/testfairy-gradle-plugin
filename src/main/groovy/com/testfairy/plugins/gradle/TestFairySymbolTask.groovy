@@ -65,7 +65,7 @@ class TestFairySymbolTask extends TestFairyTask {
 
 		MultipartEntity entity = new MultipartEntity()
 		entity.addPart('api_key', new StringBody(apiKey))
-		entity.addPart('ndk_symbols_file', new FileBody(zipFile))
+		entity.addPart('file', new FileBody(zipFile))
 
 		return entity
 	}
