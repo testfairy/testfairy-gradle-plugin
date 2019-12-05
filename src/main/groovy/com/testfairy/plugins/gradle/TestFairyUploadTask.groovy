@@ -1,210 +1,138 @@
 package com.testfairy.plugins.gradle
 
-import com.android.build.gradle.api.ApplicationVariant
-import groovy.json.JsonSlurper
-import org.apache.http.HttpHost
-import org.apache.http.HttpResponse
-import org.apache.http.auth.AuthScope
-import org.apache.http.auth.Credentials
-import org.apache.http.auth.UsernamePasswordCredentials
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.conn.params.ConnRoutePNames
 import org.apache.http.entity.mime.MultipartEntity
 import org.apache.http.entity.mime.content.FileBody
 import org.apache.http.entity.mime.content.StringBody
-import org.apache.http.impl.client.DefaultHttpClient
-import org.apache.http.util.EntityUtils
-
-//import com.testfairy.uploader.*
-
-import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.Project
+
 import org.gradle.api.tasks.TaskAction
 
-class TestFairyUploadTask extends DefaultTask {
+class TestFairyUploadTask extends TestFairyTask {
 
-	String apiKey
+    @TaskAction
+    def upload() throws IOException {
+        assertValidApiKey(extension)
 
-	ApplicationVariant applicationVariant
+        String serverEndpoint = extension.getServerEndpoint()
 
-	TestFairyExtension extension
+        // use outputFile from packageApp task
+        String apkFilename = null
+        applicationVariant.outputs.each {
+            if (it.outputFile.exists()) {
+                String filename = it.outputFile.toString()
+                if (filename.endsWith(".apk")) {
+                    apkFilename = filename
+                }
+            }
+        }
 
-	@TaskAction
-	def upload() throws IOException {
+        project.logger.info("Uploading ${apkFilename} to TestFairy on server ${serverEndpoint}")
 
-		assertValidApiKey(extension)
+        String proguardMappingFilename = null
+        if (extension.uploadProguardMapping && applicationVariant.getMappingFile()?.exists()) {
+            // proguard-mapping.txt upload is enabled and mapping found
 
-		String apiKey = extension.getApiKey()
-		String serverEndpoint = extension.getServerEndpoint()
+            proguardMappingFilename = applicationVariant.getMappingFile().toString()
+            project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
+        }
 
-		// use outputFile from packageApp task
-		String apkFilename = null
-		applicationVariant.outputs.each {
-			if (it.outputFile.exists()) {
-				String filename = it.outputFile.toString()
-				if (filename.endsWith(".apk")) {
-					apkFilename = filename
-				}
-			}
-		}
+        def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
 
-		project.logger.info("Uploading ${apkFilename} to TestFairy on server ${serverEndpoint}")
+        println ""
+        println "Successfully uploaded to TestFairy, build is available at:"
+        println json.build_url
+    }
 
-		String proguardMappingFilename = null
-		if (extension.uploadProguardMapping && applicationVariant.getMappingFile()?.exists()) {
-			// proguard-mapping.txt upload is enabled and mapping found
+    /**
+     * Upload an APK using /api/upload REST service.
+     *
+     * @param project
+     * @param extension
+     * @param apkFilename
+     * @return Object parsed json
+     */
+    private def uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
+        String serverEndpoint = extension.getServerEndpoint()
+        String url = "${serverEndpoint}/api/upload"
+        MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
+        String via = ""
 
-			proguardMappingFilename = applicationVariant.getMappingFile().toString()
-			project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
-		}
+        if (project.hasProperty("testfairyChangelog")) {
+            // optional: testfairyChangelog, as passed through -P
+            String changelog = project.property("testfairyChangelog")
+            entity.addPart('changelog', new StringBody(changelog))
+        }
 
-		def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
+        if (project.hasProperty("testfairyUploadedBy")) {
+            via = " via " + project.property("testfairyUploadedBy")
+        }
 
-		println ""
-		println "Successfully uploaded to TestFairy, build is available at:"
-		println json.build_url
-	}
+        // since testfairy gradle plugin 2.0, we no longer support instrumentation
+        entity.addPart('instrumentation', new StringBody("off"))
 
-	/**
-	 * Make sure ApiKey is configured and not empty.
-	 *
-	 * @param extension
-	 */
-	private void assertValidApiKey(extension) {
-		if (extension.getApiKey() == null || extension.getApiKey().equals("")) {
-			throw new GradleException("Please configure your TestFairy apiKey before building")
-		}
-	}
+        // send to testers groups, as defined
+        if (extension.getTestersGroups()) {
+            entity.addPart('testers-groups', new StringBody(extension.getTestersGroups()))
+        }
 
-	private DefaultHttpClient buildHttpClient() {
-		DefaultHttpClient httpClient = new DefaultHttpClient()
+        // add notify "on" or "off"
+        entity.addPart('notify', new StringBody(extension.getNotify() ? "on" : "off"))
 
-		// configure proxy (patched by timothy-volvo, https://github.com/timothy-volvo/testfairy-gradle-plugin)
-		def proxyHost = System.getProperty("http.proxyHost")
-		if (proxyHost != null) {
-			def proxyPort = Integer.parseInt(System.getProperty("http.proxyPort"))
-			HttpHost proxy = new HttpHost(proxyHost, proxyPort)
-			def proxyUser = System.getProperty("http.proxyUser")
-			if (proxyUser != null) {
-				AuthScope authScope = new AuthScope(proxyUser, proxyPort)
-				Credentials credentials = new UsernamePasswordCredentials(proxyUser, System.getProperty("http.proxyPassword"))
-				httpClient.getCredentialsProvider().setCredentials(authScope, credentials)
-			}
+        // add auto-update "on" or "off"
+        entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
 
-			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy)
-		}
+        return post(url, entity, via)
+    }
 
-		return httpClient
-	}
+    /**
+     * Build MultipartEntity for API parameters on Upload of an APK
+     *
+     * @param extension
+     * @return MultipartEntity
+     */
+    @SuppressWarnings("GrDeprecatedAPIUsage")
+    private static def buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
+        String apiKey = extension.getApiKey()
 
-	private Object post(String url, MultipartEntity entity, String via) {
-		DefaultHttpClient httpClient = buildHttpClient()
-		HttpPost post = new HttpPost(url)
-		String userAgent = "TestFairy Gradle Plugin 2.0 " + via
-		post.addHeader("User-Agent", userAgent)
-		post.setEntity(entity)
-		HttpResponse response = httpClient.execute(post)
+        MultipartEntity entity = new MultipartEntity()
+        entity.addPart('api_key', new StringBody(apiKey))
+        entity.addPart('apk_file', new FileBody(new File(apkFilename)))
 
-		String json = EntityUtils.toString(response.getEntity())
-		def parser = new JsonSlurper()
-		def parsed = parser.parseText(json)
-		if (parsed.status != "ok") {
-			throw new GradleException("Failed with json: " + json)
-		}
+        if (mappingFilename != null) {
+            entity.addPart('symbols_file', new FileBody(new File(mappingFilename)))
+        }
 
-		return parsed
-	}
+        if (extension.getVideo()) {
+            // if omitted, default value is "on"
+            entity.addPart('video', new StringBody(extension.getVideo()))
+        }
 
-	/**
-	 * Upload an APK using /api/upload REST service.
-	 *
-	 * @param project
-	 * @param extension
-	 * @param apkFilename
-	 * @return Object parsed json
-	 */
-	private Object uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
-		String serverEndpoint = extension.getServerEndpoint()
-		String url = "${serverEndpoint}/api/upload"
-		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
-		String via = ""
+        if (extension.getVideoQuality()) {
+            // if omitted, default value is "high"
+            entity.addPart('video-quality', new StringBody(extension.getVideoQuality()))
+        }
 
-		if (project.hasProperty("testfairyChangelog")) {
-			// optional: testfairyChangelog, as passed through -P
-			String changelog = project.property("testfairyChangelog")
-			entity.addPart('changelog', new StringBody(changelog))
-		}
+        if (extension.getVideoRate()) {
+            // if omitted, default is 1 frame per second (videoRate = 1.0)
+            entity.addPart('video-rate', new StringBody(extension.getVideoRate()))
+        }
 
-		if (project.hasProperty("testfairyUploadedBy")){
-			via = " via " + project.property("testfairyUploadedBy")
-		}
+        if (extension.getMetrics()) {
+            // if omitted, by default will record as much as possible
+            entity.addPart('metrics', new StringBody(extension.getMetrics()))
+        }
 
-		// since testfairy gradle plugin 2.0, we no longer support instrumentation
-		entity.addPart('instrumentation', new StringBody("off"))
+        if (extension.getMaxDuration()) {
+            // override default value
+            entity.addPart('max-duration', new StringBody(extension.getMaxDuration()))
+        }
 
-		// send to testers groups, as defined
-		if (extension.getTestersGroups()) {
-			entity.addPart('testers-groups', new StringBody(extension.getTestersGroups()))
-		}
+        if (extension.getRecordOnBackground()) {
+            // enable record on background option
+            entity.addPart('record-on-background', new StringBody("on"))
+        }
 
-		// add notify "on" or "off"
-		entity.addPart('notify', new StringBody(extension.getNotify() ? "on" : "off"))
-
-		// add auto-update "on" or "off"
-		entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
-
-		return post(url, entity, via)
-	}
-
-	/**
-	 * Build MultipartEntity for API parameters on Upload of an APK
-	 *
-	 * @param extension
-	 * @return MultipartEntity
-	 */
-	private MultipartEntity buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
-		String apiKey = extension.getApiKey()
-
-		MultipartEntity entity = new MultipartEntity()
-		entity.addPart('api_key', new StringBody(apiKey))
-		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
-
-		if (mappingFilename != null) {
-			entity.addPart('symbols_file', new FileBody(new File(mappingFilename)))
-		}
-
-		if (extension.getVideo()) {
-			// if omitted, default value is "on"
-			entity.addPart('video', new StringBody(extension.getVideo()))
-		}
-
-		if (extension.getVideoQuality()) {
-			// if omitted, default value is "high"
-			entity.addPart('video-quality', new StringBody(extension.getVideoQuality()))
-		}
-
-		if (extension.getVideoRate()) {
-			// if omitted, default is 1 frame per second (videoRate = 1.0)
-			entity.addPart('video-rate', new StringBody(extension.getVideoRate()))
-		}
-
-		if (extension.getMetrics()) {
-			// if omitted, by default will record as much as possible
-			entity.addPart('metrics', new StringBody(extension.getMetrics()))
-		}
-
-		if (extension.getMaxDuration()) {
-			// override default value
-			entity.addPart('max-duration', new StringBody(extension.getMaxDuration()))
-		}
-
-		if (extension.getRecordOnBackground()) {
-			// enable record on background option
-			entity.addPart('record-on-background', new StringBody("on"))
-		}
-
-		return entity
-	}
+        return entity
+    }
 }
 

@@ -11,9 +11,6 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 
 class TestFairyPlugin implements Plugin<Project> {
-
-	private String apiKey
-
 	@Override
 	void apply(Project project) {
 
@@ -24,14 +21,24 @@ class TestFairyPlugin implements Plugin<Project> {
 
 			AppExtension android = project.android
 			android.applicationVariants.all { ApplicationVariant variant ->
-				TaskProvider<TestFairyUploadTask> taskProvider = project.tasks.register("testfairy${variant.name.capitalize()}", TestFairyUploadTask)
-				TestFairyUploadTask task = taskProvider.get()
-				task.group = "TestFairy"
-				task.description = "Upload '${variant.name}' to TestFairy"
-				task.applicationVariant = variant
-				task.extension = extension
-				task.outputs.upToDateWhen { false }
-				task.dependsOn variant.assembleProvider
+				// Upload APK task
+				TaskProvider<TestFairyUploadTask> uploadApkTaskProvider = project.tasks.register("testfairy${variant.name.capitalize()}", TestFairyUploadTask)
+				def uploadApkTask = uploadApkTaskProvider.get()
+				uploadApkTask.group = "TestFairy"
+				uploadApkTask.description = "Upload '${variant.name}' to TestFairy"
+				uploadApkTask.applicationVariant = variant
+				uploadApkTask.extension = extension
+				uploadApkTask.outputs.upToDateWhen { false }
+				uploadApkTask.dependsOn variant.assembleProvider
+
+				TaskProvider<TestFairySymbolTask> uploadSymbolsTaskProvider = project.tasks.register("testfairyNdk${variant.name.capitalize()}", TestFairySymbolTask)
+				def uploadSymbolsTask = uploadSymbolsTaskProvider.get()
+				uploadSymbolsTask.group = "TestFairy"
+				uploadSymbolsTask.description = "Upload NDK symbols for '${variant.name}' to TestFairy"
+				uploadSymbolsTask.applicationVariant = variant
+				uploadSymbolsTask.extension = extension
+				uploadSymbolsTask.outputs.upToDateWhen { false }
+				uploadSymbolsTask.dependsOn variant.assembleProvider
 			}
 		}
 	}

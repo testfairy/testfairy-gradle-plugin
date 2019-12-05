@@ -99,6 +99,8 @@ To migrate, simply re-integrate the plugin into your module's build.gradle file.
 
 Changelog
 ----
+3.2 (2019-12-05)
+  - Added a new task to upload NDK symbols to TestFairy.
 
 3.0 (2019-05-20)
   - Added support for latest Gradle and Android Plugin (3.4+ and 5.1.1+ respectively)
@@ -114,6 +116,14 @@ Changelog
   - Removed dependency for 'zip' command.
   - Zipalign signed APK before uploading.
   - Compatible with JDK 1.6.
+
+Development
+----
+
+* Install Groovy SDK.
+* Install IntelliJ IDEA.
+* Open project and setup latest Groovy SDK and Java SDK (1.8) path.
+* Sync.
 
 Bugs
 ----

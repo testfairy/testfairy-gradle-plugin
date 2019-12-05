@@ -118,12 +118,12 @@ class TestFairyExtension {
 		return recordOnBackground;
 	}
 
-    void uploadProguardMapping(Boolean value){
-        this.uploadProguardMapping = value;
-    }
+	void uploadProguardMapping(Boolean value){
+		this.uploadProguardMapping = value;
+	}
 
-    Boolean getUploadProguardMapping(){
-        return uploadProguardMapping;
-    }
+	Boolean getUploadProguardMapping(){
+		return uploadProguardMapping;
+	}
 }
 
