@@ -16,6 +16,7 @@ apply plugin: 'testfairy'
 buildscript {
     repositories {
         jcenter()
+        google()
         maven { url 'https://www.testfairy.com/maven' }
     }
 
