@@ -20,23 +20,30 @@ class TestFairyPlugin implements Plugin<Project> {
 			AppExtension android = project.android
 			android.applicationVariants.all { ApplicationVariant variant ->
 				// Upload APK task
-				TaskProvider<TestFairyUploadTask> uploadApkTaskProvider = project.tasks.register("testfairy${variant.name.capitalize()}", TestFairyUploadTask)
-				def uploadApkTask = uploadApkTaskProvider.get()
-				uploadApkTask.group = "TestFairy"
-				uploadApkTask.description = "Upload '${variant.name}' to TestFairy"
-				uploadApkTask.applicationVariant = variant
-				uploadApkTask.extension = extension
-				uploadApkTask.outputs.upToDateWhen { false }
-				uploadApkTask.dependsOn variant.assembleProvider
+				project.tasks.register(
+						"testfairy${variant.name.capitalize()}",
+						TestFairyUploadTask
+				) { uploadApkTask ->
+					uploadApkTask.group = "TestFairy"
+					uploadApkTask.description = "Upload '${variant.name}' to TestFairy"
+					uploadApkTask.applicationVariant = variant
+					uploadApkTask.extension = extension
+					uploadApkTask.outputs.upToDateWhen { false }
+					uploadApkTask.dependsOn variant.assembleProvider
+				}
 
-				TaskProvider<TestFairySymbolTask> uploadSymbolsTaskProvider = project.tasks.register("testfairyNdk${variant.name.capitalize()}", TestFairySymbolTask)
-				def uploadSymbolsTask = uploadSymbolsTaskProvider.get()
-				uploadSymbolsTask.group = "TestFairy"
-				uploadSymbolsTask.description = "Upload NDK symbols for '${variant.name}' to TestFairy"
-				uploadSymbolsTask.applicationVariant = variant
-				uploadSymbolsTask.extension = extension
-				uploadSymbolsTask.outputs.upToDateWhen { false }
-				uploadSymbolsTask.dependsOn variant.assembleProvider
+				// Upload NDK symbols task
+				project.tasks.register(
+						"testfairyNdk${variant.name.capitalize()}",
+						TestFairySymbolTask
+				) { uploadSymbolsTask ->
+					uploadSymbolsTask.group = "TestFairy"
+					uploadSymbolsTask.description = "Upload NDK symbols for '${variant.name}' to TestFairy"
+					uploadSymbolsTask.applicationVariant = variant
+					uploadSymbolsTask.extension = extension
+					uploadSymbolsTask.outputs.upToDateWhen { false }
+					uploadSymbolsTask.dependsOn variant.assembleProvider
+				}
 			}
 		}
 	}
