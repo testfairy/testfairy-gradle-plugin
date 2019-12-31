@@ -51,15 +51,17 @@ Additional Parameters
 
 This Gradle plugin uploads APK artifacts to TestFairy for distribution. We strongly suggest you also integrate the TestFairy SDK. Additional parameters control the default behavior of newly uploaded builds:
 
-| Property      | Description |
-|---------------|-------------|
-| apiKey        | API key used for uploading |
-| video         | Should record video? Values: on/off/wifi (default: on) |
-| videoQuality  | Image quality of video. Values: high/medium/low (default: medium) |
-| testersGroups | Comma seperated list of testers-groups to invite |
-| notify        | Should send emails to these testers? Values: true/false (default: true) |
-| autoUpdate    | Display and enable auto update for testers using older versions? Values: true/false (default: false) |
+| Property           | Description |
+|--------------------|-------------|
+| apiKey             | API key used for uploading |
+| video              | Should record video? Values: on/off/wifi (default: on) |
+| videoQuality       | Image quality of video. Values: high/medium/low (default: medium) |
+| testersGroups      | Comma seperated list of testers-groups to invite |
+| notify             | Should send emails to these testers? Values: true/false (default: true) |
+| autoUpdate         | Display and enable auto update for testers using older versions? Values: true/false (default: false) |
 | recordOnBackground | Should record metrics even if app is in background (Android only)? Values: true/false (default: false) |
+| tags               | Comma separated list of tag strings which will be attached to current build |
+| custom             | A custom meta data field for your convenience |
 
 Using a Web Proxy
 --------------------------------
@@ -100,6 +102,9 @@ To migrate, simply re-integrate the plugin into your module's build.gradle file.
 
 Changelog
 ----
+3.3 (2019-12-31)
+  - Added `tags` and `custom` plugin parameters.
+  
 3.2 (2019-12-05)
   - Added a new task to upload NDK symbols to TestFairy.
 
