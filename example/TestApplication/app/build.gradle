@@ -53,6 +53,8 @@ testfairyConfig {
     recordOnBackground true
     serverEndpoint "https://app.testfairy.com"
     maxDuration "32m"
+    custom "my custom data"
+    tags "alpha,newfeature1,newfeature2"
 }
 
 dependencies {

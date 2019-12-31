@@ -12,6 +12,8 @@ class TestFairyExtension {
 	private String maxDuration
 	private String metrics
 	private String comment
+	private String tags
+	private String custom
 	private Boolean notify = true
 	private Boolean autoUpdate = false
 	private Boolean recordOnBackground = false
@@ -103,7 +105,7 @@ class TestFairyExtension {
 	}
 
 	void autoUpdate(Boolean value) {
-		this.autoUpdate = value;
+		this.autoUpdate = value
 	}
 
 	Boolean getAutoUpdate() {
@@ -111,19 +113,35 @@ class TestFairyExtension {
 	}
 
 	void recordOnBackground(Boolean value) {
-		this.recordOnBackground = value;
+		this.recordOnBackground = value
 	}
 
 	Boolean getRecordOnBackground() {
-		return recordOnBackground;
+		return recordOnBackground
 	}
 
 	void uploadProguardMapping(Boolean value){
-		this.uploadProguardMapping = value;
+		this.uploadProguardMapping = value
 	}
 
 	Boolean getUploadProguardMapping(){
 		return uploadProguardMapping;
+	}
+
+	void tags(String value) {
+		this.tags = value
+	}
+
+	String getTags() {
+		return tags
+	}
+
+	void custom(String value) {
+		this.custom = value
+	}
+
+	String getCustom() {
+		return custom
 	}
 }
 

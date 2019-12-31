@@ -70,17 +70,6 @@ class TestFairyUploadTask extends TestFairyTask {
         // since testfairy gradle plugin 2.0, we no longer support instrumentation
         entity.addPart('instrumentation', new StringBody("off"))
 
-        // send to testers groups, as defined
-        if (extension.getTestersGroups()) {
-            entity.addPart('testers-groups', new StringBody(extension.getTestersGroups()))
-        }
-
-        // add notify "on" or "off"
-        entity.addPart('notify', new StringBody(extension.getNotify() ? "on" : "off"))
-
-        // add auto-update "on" or "off"
-        entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
-
         return post(url, entity, via)
     }
 
@@ -131,6 +120,27 @@ class TestFairyUploadTask extends TestFairyTask {
             // enable record on background option
             entity.addPart('record-on-background', new StringBody("on"))
         }
+
+		if (extension.getTags()) {
+			// enable record on background option
+			entity.addPart('tags', new StringBody(extension.getTags()))
+		}
+
+		if (extension.getCustom()) {
+			// enable record on background option
+			entity.addPart('custom', new StringBody(extension.getCustom()))
+		}
+
+		if (extension.getTestersGroups()) {
+			// send to testers groups, as defined
+			entity.addPart('testers-groups', new StringBody(extension.getTestersGroups()))
+		}
+
+		// add notify "on" or "off"
+		entity.addPart('notify', new StringBody(extension.getNotify() ? "on" : "off"))
+
+		// add auto-update "on" or "off"
+		entity.addPart('auto-update', new StringBody(extension.getAutoUpdate() ? "on" : "off"))
 
         return entity
     }
