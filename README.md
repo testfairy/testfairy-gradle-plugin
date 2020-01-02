@@ -46,6 +46,15 @@ Optionally, you can add a *changelog* to this build. This changelog will appear 
 
     gradlew -PtestfairyChangelog="Fixed all bugs" testfairyDebug
     
+Uploading Crash Symbols
+-----------------------
+
+Android projects using native libraries are likely to turn on compiler flags which strip symbol names from the final binaries. In release builds, these configurations result in crash reports with illegible stack trace lines. In order to reveal the symbols in a stripped build's crash report, you must upload a collection of your symbols to TestFairy.
+
+With the plugin installed, a set of new tasks, prefixed "*testfairyNdk*" will be added, one for each build type.
+
+* To upload native symbols, run: `./gradlew testfairyNdkDebug` in your project root.
+    
 Additional Parameters
 ---------------------
 
