@@ -1,5 +1,6 @@
 package com.testfairy.plugins.gradle
 
+import com.android.build.gradle.api.ApkVariantOutput
 import org.apache.http.entity.mime.MultipartEntity
 import org.apache.http.entity.mime.content.FileBody
 import org.apache.http.entity.mime.content.StringBody
@@ -14,33 +15,34 @@ class TestFairyUploadTask extends TestFairyTask {
 		assertValidApiKey(extension)
 
 		String serverEndpoint = extension.getServerEndpoint()
-
-		// TODO : get rid of output.each and outputFile.exists(), they are obsolete starting from Gradle 6
+		
 		String apkFilename = null
 		applicationVariant.outputs.each {
-			if (it.outputFile.exists()) {
-				String filename = it.outputFile.toString()
-				if (filename.endsWith(".apk")) {
-					apkFilename = filename
-				}
+			apkFilename = project.buildDir.path + "/" + it.dirName + "outputs/apk/" + it.name + "/" + it.outputFileName
+		}
+
+		File apkFile = apkFilename != null ? new File(apkFilename) : null;
+
+		if (apkFile != null && apkFile.exists()) {
+			project.logger.info("Uploading ${apkFilename} to TestFairy on server ${serverEndpoint}")
+
+			String proguardMappingFilename = null
+			if (extension.uploadProguardMapping && applicationVariant.getMappingFile()?.exists()) {
+				// proguard-mapping.txt upload is enabled and mapping found
+
+				proguardMappingFilename = applicationVariant.getMappingFile().toString()
+				project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
 			}
+
+			def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
+
+			println ""
+			println "Successfully uploaded to TestFairy, build is available at:"
+			println json.build_url
+		} else {
+			println "Can't find any APK file to upload."
+			throw new IOException("Apk not found.");
 		}
-
-		project.logger.info("Uploading ${apkFilename} to TestFairy on server ${serverEndpoint}")
-
-		String proguardMappingFilename = null
-		if (extension.uploadProguardMapping && applicationVariant.getMappingFile()?.exists()) {
-			// proguard-mapping.txt upload is enabled and mapping found
-
-			proguardMappingFilename = applicationVariant.getMappingFile().toString()
-			project.logger.debug("Using proguard mapping file at ${proguardMappingFilename}")
-		}
-
-		def json = uploadApk(project, extension, apkFilename, proguardMappingFilename)
-
-		println ""
-		println "Successfully uploaded to TestFairy, build is available at:"
-		println json.build_url
 	}
 
 	/**
