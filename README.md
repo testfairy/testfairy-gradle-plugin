@@ -45,6 +45,10 @@ For example: to upload a debug build, run the following from terminal:
 Optionally, you can add a *changelog* to this build. This changelog will appear in your build notes and as a default message when inviting testers. For example:
 
     gradlew -PtestfairyChangelog="Fixed all bugs" testfairyDebug
+
+Similarly, you can also tag your releases like below. Tags given like this are merged with other tags from the plugin configuration.
+
+    gradlew -PtestfairyTags="feature1,feature2,alpha" testfairyDebug
     
 Additional Parameters
 ---------------------
@@ -61,7 +65,6 @@ This Gradle plugin uploads APK artifacts to TestFairy for distribution. We stron
 | autoUpdate         | Display and enable auto update for testers using older versions? Values: true/false (default: false) |
 | recordOnBackground | Should record metrics even if app is in background (Android only)? Values: true/false (default: false) |
 | tags               | Comma separated list of tag strings which will be attached to current build |
-| custom             | A custom meta data field for your convenience |
 
 Using a Web Proxy
 --------------------------------
@@ -102,6 +105,10 @@ To migrate, simply re-integrate the plugin into your module's build.gradle file.
 
 Changelog
 ----
+3.4 (2020-01-16)
+  - Added `-PtestfairyTags` CLI parameter.
+  - Removed deprecated Gradle API usage. 
+  
 3.3 (2019-12-31)
   - Added `tags` and `custom` plugin parameters.
   
