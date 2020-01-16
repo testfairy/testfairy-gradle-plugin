@@ -56,6 +56,7 @@ class TestFairyUploadTask extends TestFairyTask {
 		String url = "${serverEndpoint}/api/upload"
 		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
 		String via = ""
+		String tags = ""
 
 		if (project.hasProperty("testfairyChangelog")) {
 			// optional: testfairyChangelog, as passed through -P
@@ -65,6 +66,21 @@ class TestFairyUploadTask extends TestFairyTask {
 
 		if (project.hasProperty("testfairyUploadedBy")) {
 			via = " via " + project.property("testfairyUploadedBy")
+		}
+
+		if (project.hasProperty("testfairyTags")) {
+			if (extension.getTags()) {
+				// enable record on background option
+				tags = extension.getTags() + "," + project.property("testfairyTags")
+			} else {
+				tags = project.property("testfairyTags").toString()
+			}
+
+			entity.addPart('tags', new StringBody(tags))
+		} else if (extension.getTags()) {
+			// enable record on background option
+			tags = extension.getTags()
+			entity.addPart('tags', new StringBody(tags))
 		}
 
 		// since testfairy gradle plugin 2.0, we no longer support instrumentation
@@ -119,11 +135,6 @@ class TestFairyUploadTask extends TestFairyTask {
 		if (extension.getRecordOnBackground()) {
 			// enable record on background option
 			entity.addPart('record-on-background', new StringBody("on"))
-		}
-
-		if (extension.getTags()) {
-			// enable record on background option
-			entity.addPart('tags', new StringBody(extension.getTags()))
 		}
 
 		if (extension.getCustom()) {
