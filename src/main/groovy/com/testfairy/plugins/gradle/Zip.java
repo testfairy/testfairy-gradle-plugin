@@ -15,7 +15,7 @@ class Zip {
 
 	Zip(String sourceFolder) {
 		this.sourceFolder = sourceFolder;
-		fileList = new ArrayList<>();
+		fileList = new ArrayList<String>();
 	}
 
 	/**

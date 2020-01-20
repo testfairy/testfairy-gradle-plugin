@@ -7,10 +7,12 @@ import org.apache.http.HttpResponse
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.Credentials
 import org.apache.http.auth.UsernamePasswordCredentials
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpPost
-import org.apache.http.conn.params.ConnRoutePNames
-import org.apache.http.entity.mime.MultipartEntity
-import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.entity.mime.MultipartEntityBuilder
+import org.apache.http.impl.client.BasicCredentialsProvider
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -31,13 +33,12 @@ class TestFairyTask extends DefaultTask {
 		}
 	}
 
-	@SuppressWarnings("GrDeprecatedAPIUsage")
-	protected Object post(String url, MultipartEntity entity, String via) {
-		DefaultHttpClient httpClient = buildHttpClient()
+	protected Object post(String url, MultipartEntityBuilder entity, String via) {
+		CloseableHttpClient httpClient = buildHttpClient()
 		HttpPost post = new HttpPost(url)
 		String userAgent = "TestFairy Gradle Plugin 2.0 " + via
 		post.addHeader("User-Agent", userAgent)
-		post.setEntity(entity)
+		post.setEntity(entity.build())
 		HttpResponse response = httpClient.execute(post)
 
 		String json = EntityUtils.toString(response.getEntity())
@@ -50,9 +51,8 @@ class TestFairyTask extends DefaultTask {
 		return parsed
 	}
 
-	@SuppressWarnings("GrDeprecatedAPIUsage")
-	private DefaultHttpClient buildHttpClient() {
-		DefaultHttpClient httpClient = new DefaultHttpClient()
+	private CloseableHttpClient buildHttpClient() {
+		HttpClientBuilder builder = new HttpClientBuilder()
 
 		// configure proxy (patched by timothy-volvo, https://github.com/timothy-volvo/testfairy-gradle-plugin)
 		def proxyHost = System.getProperty("http.proxyHost")
@@ -63,11 +63,20 @@ class TestFairyTask extends DefaultTask {
 			if (proxyUser != null) {
 				AuthScope authScope = new AuthScope(proxyUser, proxyPort)
 				Credentials credentials = new UsernamePasswordCredentials(proxyUser, System.getProperty("http.proxyPassword"))
-				httpClient.getCredentialsProvider().setCredentials(authScope, credentials)
+
+				def credentialsProvider = new BasicCredentialsProvider()
+				credentialsProvider.setCredentials(authScope, credentials)
+				builder.setDefaultCredentialsProvider(credentialsProvider)
 			}
 
-			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy)
+			def requestConfig = new RequestConfig()
+			requestConfig.proxy = proxy
+
+			builder.setDefaultRequestConfig(new RequestConfig.Builder().setProxy(proxy).build())
 		}
+
+		CloseableHttpClient httpClient = builder
+				.build()
 
 		return httpClient
 	}

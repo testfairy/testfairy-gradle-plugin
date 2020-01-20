@@ -1,7 +1,7 @@
 package com.testfairy.plugins.gradle
 
 import com.android.utils.FileUtils
-import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.entity.mime.content.FileBody
 import org.apache.http.entity.mime.content.StringBody
 import org.gradle.api.Project
@@ -39,7 +39,7 @@ class TestFairySymbolTask extends TestFairyTask {
 		def zips = Zip.createZips(zippableFolders)
 
 		for (File zip : zips) {
-			MultipartEntity entity = buildEntity(extension, zip)
+			def entity = buildEntity(extension, zip)
 			String via = ""
 
 			if (project.hasProperty("testfairyUploadedBy")) {
@@ -59,11 +59,10 @@ class TestFairySymbolTask extends TestFairyTask {
 	 * @param extension
 	 * @return MultipartEntity
 	 */
-	@SuppressWarnings("GrDeprecatedAPIUsage")
 	private static def buildEntity(TestFairyExtension extension, File zipFile) {
 		String apiKey = extension.getApiKey()
 
-		MultipartEntity entity = new MultipartEntity()
+		MultipartEntityBuilder entity = MultipartEntityBuilder.create()
 		entity.addPart('api_key', new StringBody(apiKey))
 		entity.addPart('file', new FileBody(zipFile))
 
