@@ -46,7 +46,7 @@ Optionally, you can add a *changelog* to this build. This changelog will appear 
 
     gradlew -PtestfairyChangelog="Fixed all bugs" testfairyDebug
 
-Similarly, you can also tag your releases like below. Tags given like this are merged with other tags from the plugin configuration.
+Similarly, you can also tag your releases like below. Tags given like this are merged with others from the plugin configuration.
 
     gradlew -PtestfairyTags="feature1,feature2,alpha" testfairyDebug
     
@@ -114,6 +114,9 @@ To migrate, simply re-integrate the plugin into your module's build.gradle file.
 
 Changelog
 ----
+3.5 (2020-01-20)
+  - Added more heuristics to find output APK file. 
+  
 3.4 (2020-01-16)
   - Added `-PtestfairyTags` CLI parameter.
   - Removed deprecated Gradle API usage. 

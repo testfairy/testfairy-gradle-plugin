@@ -1,7 +1,7 @@
 package com.testfairy.plugins.gradle
 
 import com.android.build.gradle.api.ApkVariantOutput
-import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.entity.mime.content.FileBody
 import org.apache.http.entity.mime.content.StringBody
 import org.gradle.api.Project
@@ -15,13 +15,35 @@ class TestFairyUploadTask extends TestFairyTask {
 		assertValidApiKey(extension)
 
 		String serverEndpoint = extension.getServerEndpoint()
-		
-		String apkFilename = null
-		applicationVariant.outputs.each {
-			apkFilename = project.buildDir.path + "/" + it.dirName + "outputs/apk/" + it.name + "/" + it.outputFileName
-		}
 
-		File apkFile = apkFilename != null ? new File(apkFilename) : null;
+		String apkFilename = null
+		File apkFile = null
+
+		applicationVariant.outputs.each {
+			if (it instanceof ApkVariantOutput) {
+				ApkVariantOutput apkVariantOutput = (ApkVariantOutput)it
+
+				// Check default path
+				apkFilename = applicationVariant.packageApplicationProvider.get().outputDirectory.toString() + "/" + apkVariantOutput.outputFileName
+				apkFile = new File(apkFilename)
+
+				if (apkFile.exists()) {
+					return
+				}
+
+				// Check most common path
+				apkFilename = project.buildDir.path + "/" + apkVariantOutput.dirName + "outputs/apk/" + apkVariantOutput.name + "/" + apkVariantOutput.outputFileName
+				apkFile = new File(apkFilename)
+
+				if (apkFile.exists()) {
+					return
+				}
+
+				// Fallback to deprecated API (apkVariantOutput.outputFile), hopefully will never happen
+				apkFilename = apkVariantOutput.outputFile.toString()
+				apkFile = new File(apkFilename)
+			}
+		}
 
 		if (apkFile != null && apkFile.exists()) {
 			project.logger.info("Uploading ${apkFilename} to TestFairy on server ${serverEndpoint}")
@@ -56,7 +78,7 @@ class TestFairyUploadTask extends TestFairyTask {
 	private def uploadApk(Project project, TestFairyExtension extension, String apkFilename, String mappingFilename) {
 		String serverEndpoint = extension.getServerEndpoint()
 		String url = "${serverEndpoint}/api/upload"
-		MultipartEntity entity = buildEntity(extension, apkFilename, mappingFilename)
+		MultipartEntityBuilder entity = buildEntity(extension, apkFilename, mappingFilename)
 		String via = ""
 		String tags = ""
 
@@ -97,11 +119,10 @@ class TestFairyUploadTask extends TestFairyTask {
 	 * @param extension
 	 * @return MultipartEntity
 	 */
-	@SuppressWarnings("GrDeprecatedAPIUsage")
 	private static def buildEntity(TestFairyExtension extension, String apkFilename, String mappingFilename) {
 		String apiKey = extension.getApiKey()
 
-		MultipartEntity entity = new MultipartEntity()
+		MultipartEntityBuilder entity = MultipartEntityBuilder.create()
 		entity.addPart('api_key', new StringBody(apiKey))
 		entity.addPart('apk_file', new FileBody(new File(apkFilename)))
 
