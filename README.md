@@ -8,24 +8,22 @@ Installation
 
 A typical TestFairy Gradle Plugin installation takes less than 1 minute. 
 
-Installation consists of adding the following to your app module's ***build.gradle*** file:
+Installation consists of adding the following lines to your ***build.gradle*** files:
 
 ```
-apply plugin: 'testfairy'
-
+// Project's build.gradle
 buildscript {
     repositories {
         jcenter()
         google()
         maven { url 'https://www.testfairy.com/maven' }
-    }
-
-    dependencies {
+    }    dependencies {
         classpath 'com.testfairy.plugins.gradle:testfairy:3.+'
     }
 }
 
-testfairyConfig {
+// App module's build.gradle
+apply plugin: 'testfairy'testfairyConfig {
     apiKey "1234567890abcdef"
     uploadProguardMapping true    
 }
