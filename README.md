@@ -23,7 +23,8 @@ buildscript {
 }
 
 // App module's build.gradle
-apply plugin: 'testfairy'testfairyConfig {
+apply plugin: 'testfairy'
+testfairyConfig {
     apiKey "1234567890abcdef"
     uploadProguardMapping true    
 }
