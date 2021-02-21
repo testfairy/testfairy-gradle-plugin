@@ -14,10 +14,9 @@ Installation consists of adding the following lines to your ***build.gradle*** f
 // Project's build.gradle
 buildscript {
     repositories {
-        jcenter()
-        google()
         maven { url 'https://www.testfairy.com/maven' }
-    }    dependencies {
+    }
+    dependencies {
         classpath 'com.testfairy.plugins.gradle:testfairy:3.+'
     }
 }
