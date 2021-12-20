@@ -1,18 +1,23 @@
 apply plugin: 'groovy'
 
 dependencies {
-	compile gradleApi()
-	compile localGroovy()
-	compile 'commons-io:commons-io:2.4'
-	compile 'org.apache.httpcomponents:httpmime:4.2.5'
-	compile 'org.apache.commons:commons-compress:1.9'
-	compile 'com.android.tools.build:gradle:3.4.0'
+	implementation gradleApi()
+	implementation localGroovy()
+	implementation 'commons-io:commons-io:2.11.0'
+	implementation 'org.apache.httpcomponents:httpmime:4.5.13'
+	implementation 'org.apache.commons:commons-compress:1.21'
+	implementation 'com.android.tools.build:gradle:3.4.3'
 }
 
 apply plugin: 'maven'
 
 group = 'com.testfairy.plugins.gradle'
-version = '3.5'
+//version = '3.5'
+
+def pluginVersion = System.getenv('TF_GRADLE_VERSION')
+version = pluginVersion ? pluginVersion : "HEAD"
+
+System.out.println("Version: " + project.version);
 
 repositories {
 	mavenCentral()
@@ -28,11 +33,12 @@ compileJava {
 	targetCompatibility = 1.6
 }
 
+def localBuild = project.version.equals("HEAD")
+
 uploadArchives {
 	repositories {
 		mavenDeployer {
-//			repository(url: uri('repo'))
-			repository(url: uri('../testfairy-maven'))
+			repository(url: localBuild ? uri('./repo') : uri('../testfairy-maven'))
 
 			pom.project {
 				name 'TestFairy Uploader Plugin for Gradle'

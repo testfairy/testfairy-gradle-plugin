@@ -32,19 +32,19 @@ buildscript {
         google()
 
         //Enable when testing local plugin
-        maven { url '../../../../testfairy-maven' }
+        maven { url '../../../repo' }
 
         //Enable when testing remote release
 //        maven { url 'https://www.testfairy.com/maven' }
     }
 
     dependencies {
-        classpath 'com.testfairy.plugins.gradle:testfairy:3.+'
+        classpath 'com.testfairy.plugins.gradle:testfairy:+'
     }
 }
 
 testfairyConfig {
-    apiKey "ae6edb30a71f825093216f851a9bf414984cb131"
+    apiKey System.getenv('TF_API_KEY')
     testersGroups "myself"
     notify true
     video "wifi"
