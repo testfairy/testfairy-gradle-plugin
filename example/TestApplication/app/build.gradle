@@ -32,6 +32,8 @@ buildscript {
         google()
 
         //Enable when testing local plugin
+        maven { url ('../../../repo') }
+        maven { url ('../../../testfairy-maven') }
         maven { url ('../../../../repo') }
         maven { url ('../../../../testfairy-maven') }
 
