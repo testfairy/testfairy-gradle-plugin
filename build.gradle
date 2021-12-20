@@ -39,10 +39,12 @@ uploadArchives {
 		mavenDeployer {
 			def pluginVersion2 = System.getenv('TF_GRADLE_VERSION')
 			def version2 = (pluginVersion2 != null && pluginVersion2.length() > 0) ? pluginVersion2 : "HEAD"
+			def repoUrl = version2.equals("HEAD") ? uri('./repo') : uri('./testfairy-maven')
 
 			System.out.println("Version: " + version2)
+			System.out.println("Repo: " + repoUrl)
 
-			repository(url: version2.equals("HEAD") ? uri('./repo') : uri('./testfairy-maven'))
+			repository(url: repoUrl)
 
 			pom.project {
 				name 'TestFairy Uploader Plugin for Gradle'
