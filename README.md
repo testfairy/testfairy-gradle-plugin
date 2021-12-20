@@ -112,6 +112,9 @@ To migrate, simply re-integrate the plugin into your module's build.gradle file.
 
 Changelog
 ----
+3.6 (2021-12-20)
+  - Updated core frameworks.
+
 3.5 (2020-01-20)
   - Added more heuristics to find output APK file. 
   
