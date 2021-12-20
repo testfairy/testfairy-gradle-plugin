@@ -26,16 +26,13 @@ android {
 
 apply plugin: 'testfairy'
 
-def pluginVersion = System.getenv('TF_GRADLE_VERSION')
-def localBuild = pluginVersion.equals("HEAD")
-
 buildscript {
     repositories {
         jcenter()
         google()
 
         //Enable when testing local plugin
-        maven { url ('../../../' + (localBuild ? 'repo' : 'testfairy-maven')) }
+        maven { url ('../../../' + (System.getenv('TF_GRADLE_VERSION').equals("HEAD") ? 'repo' : 'testfairy-maven')) }
 
         //Enable when testing remote release
 //        maven { url 'https://www.testfairy.com/maven' }
