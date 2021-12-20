@@ -44,7 +44,7 @@ jobs:
           repository: testfairy/testfairy-maven
           token: ${{ secrets.MAVEN_GH_TOKEN }}
           ssh-key: ${{ env.MAVEN_GH_SSH_KEY }}
-          path: '../testfairy-maven'
+          path: './testfairy-maven'
 
       - name: Build
         run: |
@@ -62,7 +62,7 @@ jobs:
           fail_on_unmatched_files: true
           prerelease: false
           files: |
-            repo/com/testfairy/plugins/gradle/testfairy/${{ env.TF_GRADLE_VERSION }}/testfairy-gradle-plugin-${{ env.TF_GRADLE_VERSION }}.jar
+            testfairy-maven/com/testfairy/plugins/gradle/testfairy/${{ env.TF_GRADLE_VERSION }}/testfairy-gradle-plugin-${{ env.TF_GRADLE_VERSION }}.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -76,7 +76,7 @@ jobs:
           git config --global user.email "devtools+maven-publish@testfairy.com"
           git config --global user.name "testfairy-maven-publish"
 
-          cd ../testfairy-maven
+          cd testfairy-maven
 
           GIT_BRANCH="publish-gradle-$TF_GRADLE_VERSION"
           git branch $GIT_BRANCH

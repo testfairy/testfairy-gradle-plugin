@@ -38,7 +38,7 @@ def localBuild = project.version.equals("HEAD")
 uploadArchives {
 	repositories {
 		mavenDeployer {
-			repository(url: localBuild ? uri('./repo') : uri('../testfairy-maven'))
+			repository(url: localBuild ? uri('./repo') : uri('./testfairy-maven'))
 
 			pom.project {
 				name 'TestFairy Uploader Plugin for Gradle'
