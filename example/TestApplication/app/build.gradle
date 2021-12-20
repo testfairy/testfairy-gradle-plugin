@@ -32,7 +32,7 @@ buildscript {
         google()
 
         //Enable when testing local plugin
-        maven { url ('../../../' + (System.getenv('TF_GRADLE_VERSION').equals("HEAD") ? 'repo' : 'testfairy-maven')) }
+        maven { url ('../../../../' + (System.getenv('TF_GRADLE_VERSION').equals("HEAD") ? 'repo' : 'testfairy-maven')) }
 
         //Enable when testing remote release
 //        maven { url 'https://www.testfairy.com/maven' }
