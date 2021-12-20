@@ -12,12 +12,11 @@ dependencies {
 apply plugin: 'maven'
 
 group = 'com.testfairy.plugins.gradle'
-//version = '3.5'
 
 def pluginVersion = System.getenv('TF_GRADLE_VERSION')
-version = pluginVersion ? pluginVersion : "HEAD"
+version = (pluginVersion != null && pluginVersion.length() > 0) ? pluginVersion : "HEAD"
 
-System.out.println("Version: " + project.version);
+System.out.println("TestFairy Gradle Plugin Version: " + project.version);
 
 repositories {
 	mavenCentral()
