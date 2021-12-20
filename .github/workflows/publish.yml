@@ -63,7 +63,7 @@ jobs:
           fail_on_unmatched_files: true
           prerelease: false
           files: |
-            testfairy-maven/com/testfairy/plugins/gradle/testfairy/${{ env.TF_GRADLE_VERSION }}/testfairy-gradle-plugin-${{ env.TF_GRADLE_VERSION }}.jar
+            testfairy-maven/com/testfairy/plugins/gradle/testfairy/${{ env.TF_GRADLE_VERSION }}/testfairy-${{ env.TF_GRADLE_VERSION }}.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
