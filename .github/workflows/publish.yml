@@ -1,0 +1,91 @@
+name: Publish plugin to testfairy-maven repo as a PR
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Setup java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Setup Github CLI and login
+        run: |
+          sudo apt install -y gh
+
+          echo ${{ secrets.MAVEN_GH_SSH_KEY_BASE64 }} | base64 --decode > ghkey
+          # sudo chmod 600 ghkey
+          # eval `ssh-agent -s`
+          # ssh-add ghkey
+          echo ${{ secrets.MAVEN_GH_TOKEN }} > maven-token
+
+          gh auth login --with-token < maven-token
+
+          export MAVEN_GH_SSH_KEY=`cat ghkey`
+        shell: bash
+
+      - name: Check out testfairy-maven
+        uses: actions/checkout@v2
+        with:
+          repository: testfairy/testfairy-maven
+          token: ${{ secrets.MAVEN_GH_TOKEN }}
+          ssh-key: ${{ env.MAVEN_GH_SSH_KEY }}
+          path: './testfairy-maven'
+
+      - name: Build
+        run: |
+          export TF_API_KEY=${{ secrets.TF_API_KEY }}
+          echo "TF_GRADLE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          export TF_GRADLE_VERSION=${GITHUB_REF#refs/*/}
+
+          ./gradlew uploadArchives
+        shell: bash
+
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Version ${{ env.TF_GRADLE_VERSION }}
+          tag_name: ${{ env.TF_GRADLE_VERSION }}
+          fail_on_unmatched_files: true
+          prerelease: false
+          files: |
+            testfairy-maven/com/testfairy/plugins/gradle/testfairy/${{ env.TF_GRADLE_VERSION }}/testfairy-${{ env.TF_GRADLE_VERSION }}.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to testfairy-maven
+        run: |
+          if [ "$TF_GRADLE_VERSION" == "HEAD" ]; then
+              echo "Cannot publish HEAD. Please use proper semver in your release."
+              exit 1
+          fi
+
+          git config --global user.email "devtools+maven-publish@testfairy.com"
+          git config --global user.name "testfairy-maven-publish"
+
+          cd testfairy-maven
+
+          GIT_BRANCH="publish-gradle-$TF_GRADLE_VERSION"
+          git branch $GIT_BRANCH
+          git checkout $GIT_BRANCH
+          git add *
+          git commit -m "Publishing TestFairy Gradle Plugin $TF_GRADLE_VERSION"
+          git push -u origin $GIT_BRANCH
+
+          gh pr create --title "Publishing TestFairy Gradle Plugin $TF_GRADLE_VERSION" --body "$TF_GRADLE_VERSION"
+        shell: bash
+

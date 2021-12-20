@@ -143,10 +143,20 @@ Changelog
 Development
 ----
 
-* Install Groovy SDK.
 * Install IntelliJ IDEA.
+* Install Groovy SDK if IntelliJ fails importing groovy dependencies. (only affects static analysis)
 * Open project and setup latest Groovy SDK and Java SDK (1.8) path.
 * Sync.
+
+To test the plugin after code change, run:
+
+```bash
+export TF_API_KEY=${{ secrets.TF_API_KEY }}
+
+./gradlew uploadArchives
+cd example/TestApplication
+./gradlew testfairyDebug
+```
 
 Bugs
 ----
