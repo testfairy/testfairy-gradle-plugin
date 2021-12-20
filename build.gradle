@@ -32,11 +32,16 @@ compileJava {
 	targetCompatibility = 1.6
 }
 
-def localBuild = project.version.equals("HEAD")
+
 
 uploadArchives {
 	repositories {
 		mavenDeployer {
+			def v = System.getenv('TF_GRADLE_VERSION')
+			def localBuild = v == null || v.length() == 0
+
+			System.out.println("Version: " + v)
+
 			repository(url: localBuild ? uri('./repo') : uri('./testfairy-maven'))
 
 			pom.project {
